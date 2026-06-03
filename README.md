@@ -89,7 +89,7 @@ Di dunia nyata, sistem blockchain rawan terhadap peretasan atau *human error*. M
 
 Fungsi yang tidak mengubah *state* (tidak butuh *gas fee*) sangat dibutuhkan oleh *Frontend / Web App* untuk menampilkan antarmuka yang baik:
 
-* Fungsi 5: `getProductDetails(bytes32 productId)`
+* Fungsi 6: `getProductDetails(bytes32 productId)`
 * **Kegunaan:** Mengembalikan data detail untuk satu botol oli (Status Baru/Hangus, timestamp scan, dan lokasi scan).
-* Fungsi 6: `getSystemStats()`
+* Fungsi 7: `getSystemStats()`
 * **Kegunaan:** Mengembalikan total oli yang pernah didaftarkan dan total oli yang sudah berhasil divalidasi konsumen. Ini sangat bagus untuk ditampilkan di halaman *Dashboard* web perusahaan.
