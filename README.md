@@ -46,3 +46,30 @@ Untuk mengimplementasikan logika di atas, *smart contract* tim Anda perlu diranc
 ## 5. Pertimbangan UX & Best Practice Relayer
 Sebagai catatan tambahan untuk tim: Meminta konsumen awam untuk membayar *gas fee* atau memiliki dompet kripto saat melakukan pemindaian (Tahap 3) bukanlah *user experience* yang baik. 
 Sebagai *best practice*, pertimbangkan untuk membangun sistem *Backend Relayer* (sebagai API perantara). *Frontend* akan mengirim perintah validasi beserta data lokasi ke API, dan API tersebut (yang didanai oleh perusahaan pelumas) yang akan membayarkan *gas fee* ke blockchain atas nama konsumen, sehingga proses otomatisasi berjalan mulus di balik layar.
+
+---
+## List of function
+### 1. Kategori: Core Supply Chain (Fungsi Inti)
+Ini adalah fungsi-fungsi yang sudah kita bahas sebelumnya untuk memenuhi siklus bisnis utama:
+
+* Fungsi 1: `addVariant(string brand, string oilType)`
+* **Kegunaan:** Menambahkan master data varian oli baru (hanya bisa dilakukan Admin).
+* Fungsi 2: `registerProductBatch(bytes32[] productIds, uint256 variantId)`
+* **Kegunaan:** Mendaftarkan ratusan/ribuan ID oli sekaligus ke dalam blockchain (hanya bisa dilakukan Admin).
+* Fungsi 3: `validateProduct(bytes32 productId, string scanLocation)`
+* **Kegunaan:** Fungsi publik untuk konsumen saat memindai QR Code. Mengubah status produk menjadi "Hangus" dan mencatat lokasi.
+
+
+### 2. Kategori: Security & Incident Management (Pola Keamanan Ekstra)
+Di dunia nyata, sistem blockchain rawan terhadap peretasan atau *human error*. Menambahkan fungsi-fungsi ini akan membuat tugas Anda terlihat sangat canggih:
+
+* Fungsi 4: `transferOwnership(address newAdmin)` *(Pola: Ownable)*
+* **Kegunaan:** Memindahkan hak akses Admin ke *wallet* lain. Ini wajib ada di dunia nyata, berjaga-jaga jika *private key* dompet Admin pertama bocor atau perusahaan mengganti direktur IT.
+
+### 3. Kategori: Data Retrieval (Fungsi Pembaca / View)
+Fungsi yang tidak mengubah *state* (tidak butuh *gas fee*) sangat dibutuhkan oleh *Frontend / Web App* untuk menampilkan antarmuka yang baik:
+
+* Fungsi 5: `getProductDetails(bytes32 productId)`
+* **Kegunaan:** Mengembalikan data detail untuk satu botol oli (Status Baru/Hangus, timestamp scan, dan lokasi scan).
+* Fungsi 6: `getSystemStats()`
+* **Kegunaan:** Mengembalikan total oli yang pernah didaftarkan dan total oli yang sudah berhasil divalidasi konsumen. Ini sangat bagus untuk ditampilkan di halaman *Dashboard* web perusahaan.
