@@ -44,3 +44,7 @@ pnpm-debug.log*
 .DS_Store
 .idea/
 .vscode/
+
+# Opencode
+.opencode/*
+.opencode/
