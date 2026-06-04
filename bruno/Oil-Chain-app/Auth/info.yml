@@ -1,0 +1,10 @@
+info:
+  name: Auth
+  type: folder
+  seq: 1
+
+docs: |-
+  # Auth
+  Minimal JWT-based authentication for the Admin role.
+  No complex OAuth. A single login endpoint returns a signed JWT token.
+  Pass the token in subsequent requests as: `Authorization: Bearer <token>`.

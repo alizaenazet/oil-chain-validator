@@ -1,0 +1,71 @@
+info:
+  name: Get System Stats
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/stats"
+  headers:
+    - name: Accept
+      value: application/json
+  auth: none
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.success
+      operator: eq
+      value: "true"
+    - expression: res.body.data.totalRegistered
+      operator: isNumber
+    - expression: res.body.data.totalValidated
+      operator: isNumber
+
+settings:
+  encodeUrl: true
+  timeout: 15000
+  followRedirects: false
+
+docs: |-
+  # GET /stats
+
+  Returns system-wide counters from the OilValidator contract.
+  Maps to smart contract: `getSystemStats()`
+
+  **Public:** No authentication required.
+  **Redis Cached:** TTL = 60 seconds.
+
+  ## Redis Caching Strategy
+  Calling `getSystemStats()` on every page load would hammer the RPC node.
+  The backend caches the result in Redis under the key `cache:system:stats`.
+  On cache miss → call contract → store result → return to client.
+  On cache hit → return cached result immediately.
+
+  The response includes `meta.cachedAt` so the frontend can show
+  "Stats as of X seconds ago" to users.
+
+  ## Success Response `200 OK`
+  ```json
+  {
+    "success": true,
+    "data": {
+      "totalRegistered": 50000,
+      "totalValidated": 32847,
+      "totalVariants": 12,
+      "totalRevoked": 34
+    },
+    "meta": {
+      "cachedAt": "2024-07-15T10:29:00.000Z",
+      "cacheTtlSeconds": 60,
+      "cacheSource": "redis"
+    }
+  }
+  ```
+
+  ## Error Responses
+  | Status | Code        | Scenario                        |
+  |--------|-------------|---------------------------------|
+  | `500`  | `RPC_ERROR` | Blockchain RPC node unreachable |

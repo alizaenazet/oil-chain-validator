@@ -1,0 +1,810 @@
+openapi: 3.0.3
+info:
+  title: OilValidator Relayer API
+  description: >-
+    Express.js relayer API for the OilValidator anti-counterfeit system.
+    Bridges React frontend operations to the OilValidator Solidity contract.
+    Admin endpoints are protected via JWT. Public endpoints act as a gas relayer
+    and leverage Redis caching for blockchain reads.
+  version: 1.0.0
+  contact:
+    name: Oil-Chain Team
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development server
+
+tags:
+  - name: Auth
+    description: Pragmatic admin authentication
+  - name: Admin
+    description: Admin-only blockchain write operations
+  - name: Public
+    description: Public read operations and consumer validation (relayed)
+
+paths:
+  # ── Auth ───────────────────────────────────────────────────────────────
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Admin Login
+      description: Authenticates an admin against PostgreSQL and returns a JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Bad request — missing username or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized — invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Admin: Master Data ─────────────────────────────────────────────────
+  /admin/variants:
+    post:
+      tags:
+        - Admin
+      summary: Add Lubricant Variant
+      description: >-
+        Proxies to `addVariant(brand, oilType)` on-chain.
+        Requires admin JWT.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddVariantRequest'
+      responses:
+        '201':
+          description: Variant successfully added on-chain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariantTxResponse'
+        '400':
+          description: Bad request — validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized — missing or invalid JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden — caller is not the admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server or blockchain transaction error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Bad Gateway — blockchain RPC failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Public: Variant Details ────────────────────────────────────────────
+  /variants/{variantId}:
+    get:
+      tags:
+        - Public
+      summary: Get Variant Details
+      description: >-
+        Proxies to `getVariantDetails(variantId)` (or public mapping `variants(variantId)`) on-chain.
+        Cached in Redis to reduce RPC load.
+      parameters:
+        - name: variantId
+          in: path
+          required: true
+          description: Unique variant identifier assigned on-chain
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            example: 1
+      responses:
+        '200':
+          description: Variant details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariantResponse'
+          headers:
+            X-Cache-Hit:
+              description: Indicates whether the response was served from Redis cache
+              schema:
+                type: boolean
+                example: true
+        '400':
+          description: Bad request — invalid variantId format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found — variant does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Bad Gateway — blockchain RPC failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Admin: Batch Registration ──────────────────────────────────────────
+  /admin/batches:
+    post:
+      tags:
+        - Admin
+      summary: Register Product Batch
+      description: >-
+        Proxies to `registerProductBatch(productIds, variantId)` on-chain.
+        The backend hashes each raw `serialNumber` with keccak256 off-chain
+        before submitting the `bytes32[]` array to the contract.
+        Requires admin JWT.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterBatchRequest'
+      responses:
+        '201':
+          description: Batch successfully registered on-chain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TxResponse'
+        '400':
+          description: Bad request — invalid payload or duplicate serial numbers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized — missing or invalid JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden — caller is not the admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict — one or more products already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server or blockchain transaction error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Bad Gateway — blockchain RPC failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Public: Product Details (Cached) ───────────────────────────────────
+  /products:
+    get:
+      tags:
+        - Public
+      summary: Get Product Details
+      description: >-
+        Looks up a product by its raw serial number.
+        The backend hashes the serial number off-chain (keccak256) and queries
+        `getProductDetails(bytes32)` (or public mapping `products(bytes32)`) on-chain.
+        Results are cached in Redis.
+      parameters:
+        - name: serialNumber
+          in: query
+          required: true
+          description: Raw serial number scanned from QR code
+          schema:
+            type: string
+            example: SN-2024-0001
+      responses:
+        '200':
+          description: Product details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+          headers:
+            X-Cache-Hit:
+              description: Indicates whether the response was served from Redis cache
+              schema:
+                type: boolean
+                example: false
+        '400':
+          description: Bad request — missing serialNumber
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found — product not registered on-chain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Bad Gateway — blockchain RPC failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Public: Product Validation (Relayer) ───────────────────────────────
+  /products/validate:
+    post:
+      tags:
+        - Public
+      summary: Validate Product (Gas Relayer)
+      description: >-
+        Proxies to `validateProduct(productId, scanLocation)` on-chain.
+        The backend hashes the raw `serialNumber` off-chain and submits the
+        transaction using the backend wallet, paying gas on behalf of the consumer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateProductRequest'
+      responses:
+        '200':
+          description: Product successfully validated on-chain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResponse'
+        '400':
+          description: >-
+            Bad request — product already validated, revoked, or not in NEW status.
+            (Maps to on-chain revert conditions.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found — product hash does not exist on-chain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server or blockchain transaction error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Bad Gateway — blockchain RPC failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Admin: Transfer Ownership ──────────────────────────────────────────
+  /admin/transfer-ownership:
+    post:
+      tags:
+        - Admin
+      summary: Transfer Contract Ownership
+      description: >-
+        Proxies to `transferOwnership(newAdmin)` on-chain.
+        Moves admin rights to a new wallet address. Critical for security
+        incident response or key rotation. Requires admin JWT.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferOwnershipRequest'
+      responses:
+        '200':
+          description: Ownership successfully transferred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TxResponse'
+        '400':
+          description: Bad request — invalid Ethereum address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized — missing or invalid JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden — caller is not the current admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server or blockchain transaction error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Bad Gateway — blockchain RPC failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Admin: Emergency Revoke ────────────────────────────────────────────
+  /admin/revoke:
+    post:
+      tags:
+        - Admin
+      summary: Emergency Revoke Compromised Products
+      description: >-
+        Proxies to `emergencyRevoke(compromisedIds)` on-chain.
+        The backend hashes each raw `serialNumber` with keccak256 off-chain
+        before submitting the `bytes32[]` array to the contract, permanently
+        marking them as REVOKED. Use this for stolen QR stickers or supply-chain
+        breaches. Requires admin JWT.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeRequest'
+      responses:
+        '200':
+          description: Products successfully revoked on-chain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TxResponse'
+        '400':
+          description: Bad request — invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized — missing or invalid JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden — caller is not the admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found — one or more product hashes not found on-chain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server or blockchain transaction error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Bad Gateway — blockchain RPC failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Public: System Stats (Cached) ──────────────────────────────────────
+  /stats:
+    get:
+      tags:
+        - Public
+      summary: Get System Statistics
+      description: >-
+        Proxies to `getSystemStats()` on-chain.
+        Aggregates on-chain counters (`totalVariants`, `totalRegisteredProducts`,
+        `totalValidatedProducts`). Results are aggressively cached in Redis to
+        prevent blockchain RPC spam.
+      responses:
+        '200':
+          description: System statistics retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStatsResponse'
+          headers:
+            X-Cache-Hit:
+              description: Indicates whether the response was served from Redis cache
+              schema:
+                type: boolean
+                example: true
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Bad Gateway — blockchain RPC failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+# ── Components ───────────────────────────────────────────────────────────
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Admin JWT obtained from `/auth/login`
+
+  schemas:
+    # ── Auth ─────────────────────────────────────────────────────────────
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          description: Admin username stored in PostgreSQL
+          example: admin
+        password:
+          type: string
+          format: password
+          description: Admin password
+          example: SecurePass123!
+      required:
+        - username
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT Bearer token for subsequent admin requests
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      required:
+        - token
+
+    # ── Requests ─────────────────────────────────────────────────────────
+    AddVariantRequest:
+      type: object
+      properties:
+        brand:
+          type: string
+          description: Lubricant brand name
+          example: Shell
+        oilType:
+          type: string
+          description: Oil classification / viscosity grade
+          example: 5W-30 Full Synthetic
+      required:
+        - brand
+        - oilType
+
+    RegisterBatchRequest:
+      type: object
+      properties:
+        variantId:
+          type: integer
+          format: int64
+          description: Existing variant ID to associate with this batch
+          minimum: 1
+          example: 1
+        serialNumbers:
+          type: array
+          items:
+            type: string
+          description: >-
+            Raw serial numbers from the frontend.
+            The backend hashes each entry with keccak256 before writing on-chain.
+          example:
+            - SN-2024-0001
+            - SN-2024-0002
+            - SN-2024-0003
+      required:
+        - variantId
+        - serialNumbers
+
+    ValidateProductRequest:
+      type: object
+      properties:
+        serialNumber:
+          type: string
+          description: Raw serial number scanned from the product QR code
+          example: SN-2024-0001
+        scanLocation:
+          type: string
+          description: Human-readable geographic location of the scan
+          example: Jakarta, Indonesia
+      required:
+        - serialNumber
+        - scanLocation
+
+    TransferOwnershipRequest:
+      type: object
+      properties:
+        newAdminAddress:
+          type: string
+          description: Ethereum address of the new administrator
+          example: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'
+      required:
+        - newAdminAddress
+
+    RevokeRequest:
+      type: object
+      properties:
+        serialNumbers:
+          type: array
+          items:
+            type: string
+          description: >-
+            Raw serial numbers of compromised products.
+            The backend hashes each entry with keccak256 before revoking on-chain.
+          example:
+            - SN-2024-0999
+            - SN-2024-1000
+      required:
+        - serialNumbers
+
+    # ── Responses ────────────────────────────────────────────────────────
+    VariantResponse:
+      type: object
+      properties:
+        variantId:
+          type: integer
+          format: int64
+          description: On-chain variant identifier
+          example: 1
+        brand:
+          type: string
+          example: Shell
+        oilType:
+          type: string
+          example: 5W-30 Full Synthetic
+      required:
+        - variantId
+        - brand
+        - oilType
+
+    VariantTxResponse:
+      type: object
+      properties:
+        variantId:
+          type: integer
+          format: int64
+          description: Auto-incremented on-chain variant identifier
+          example: 1
+        brand:
+          type: string
+          example: Shell
+        oilType:
+          type: string
+          example: 5W-30 Full Synthetic
+        txHash:
+          type: string
+          description: Ethereum transaction hash
+          example: '0xabc123def456...'
+      required:
+        - variantId
+        - brand
+        - oilType
+        - txHash
+
+    TxResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        txHash:
+          type: string
+          description: Ethereum transaction hash
+          example: '0xabc123def456...'
+      required:
+        - success
+        - txHash
+
+    ProductResponse:
+      type: object
+      properties:
+        productHash:
+          type: string
+          description: keccak256 hash of the raw serial number used as the on-chain key
+          example: '0x7f8d9e...'
+        variantId:
+          type: integer
+          format: int64
+          description: Associated variant identifier
+          example: 1
+        registeredAt:
+          type: integer
+          format: int64
+          description: Unix timestamp (seconds) of on-chain registration
+          example: 1717603200
+        validatedAt:
+          type: integer
+          format: int64
+          description: Unix timestamp (seconds) of consumer validation; 0 if not yet validated
+          example: 0
+        status:
+          type: string
+          enum:
+            - UNREGISTERED
+            - NEW
+            - USED
+            - REVOKED
+          description: Current product lifecycle status
+          example: NEW
+        scanLocation:
+          type: string
+          description: Geographic location provided at validation; empty string if not yet validated
+          example: ''
+      required:
+        - productHash
+        - variantId
+        - registeredAt
+        - validatedAt
+        - status
+        - scanLocation
+
+    ValidationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        productHash:
+          type: string
+          description: keccak256 hash submitted on-chain
+          example: '0x7f8d9e...'
+        variantId:
+          type: integer
+          format: int64
+          example: 1
+        status:
+          type: string
+          enum:
+            - UNREGISTERED
+            - NEW
+            - USED
+            - REVOKED
+          description: Updated status after validation (expected USED)
+          example: USED
+        validatedAt:
+          type: integer
+          format: int64
+          description: Unix timestamp (seconds) returned by the blockchain
+          example: 1717689600
+        scanLocation:
+          type: string
+          example: Jakarta, Indonesia
+        txHash:
+          type: string
+          description: Ethereum transaction hash of the validation transaction
+          example: '0xabc123def456...'
+      required:
+        - success
+        - productHash
+        - variantId
+        - status
+        - validatedAt
+        - scanLocation
+        - txHash
+
+    SystemStatsResponse:
+      type: object
+      properties:
+        totalVariants:
+          type: integer
+          format: int64
+          description: Total master variants registered on-chain
+          example: 5
+        totalRegisteredProducts:
+          type: integer
+          format: int64
+          description: Total individual products registered on-chain
+          example: 1250
+        totalValidatedProducts:
+          type: integer
+          format: int64
+          description: Total products validated by consumers on-chain
+          example: 847
+        cachedAt:
+          type: integer
+          format: int64
+          description: Unix timestamp indicating when this snapshot was cached in Redis
+          example: 1717690000
+      required:
+        - totalVariants
+        - totalRegisteredProducts
+        - totalValidatedProducts
+        - cachedAt
+
+    # ── Errors ───────────────────────────────────────────────────────────
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Short error code
+          example: CONFLICT
+        message:
+          type: string
+          description: Human-readable error description
+          example: Product has already been validated
+      required:
+        - error
+        - message

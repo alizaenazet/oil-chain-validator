@@ -1,0 +1,12 @@
+info:
+  name: Validation
+  type: folder
+  seq: 3
+
+docs: |-
+  # Validation (Public — Gas Relayer)
+  Consumer-facing endpoint triggered automatically when a QR Code is scanned.
+  No wallet or crypto knowledge required from the consumer.
+  The backend hashes the raw product ID off-chain and submits the
+  `validateProduct(bytes32, string)` transaction on their behalf,
+  paying the gas fee from the company wallet.

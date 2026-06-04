@@ -1,0 +1,103 @@
+info:
+  name: Register Product Batch
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/batches"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Authorization
+      value: "Bearer {{token}}"
+  body:
+    type: json
+    data: |-
+      {
+        "variantId": 1,
+        "serialNumbers": [
+          "OIL-PERT-2024-000001",
+          "OIL-PERT-2024-000002",
+          "OIL-PERT-2024-000003"
+        ]
+      }
+  auth: none
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "202"
+    - expression: res.body.success
+      operator: eq
+      value: "true"
+    - expression: res.body.data.registered
+      operator: isNumber
+
+settings:
+  encodeUrl: true
+  timeout: 120000
+  followRedirects: false
+
+docs: |-
+  # POST /admin/batches
+
+  Registers a batch of product serial numbers on-chain.
+  Maps to smart contract: `registerProductBatch(bytes32[] productIds, uint256 variantId)`
+
+  **Protected:** Requires Admin JWT Bearer token.
+
+  ## Critical Off-Chain Hashing Logic
+  The frontend sends **raw human-readable serial numbers**.
+  The backend MUST apply `keccak256` to each string BEFORE sending to the contract.
+
+  ```
+  productId[i] = keccak256(abi.encodePacked(serialNumbers[i]))
+  ```
+
+  This means QR codes printed on bottles will encode the raw serial number,
+  and the consumer validation flow hashes it identically before lookup.
+
+  ## Request Body
+  | Field           | Type     | Required | Description                                  |
+  |-----------------|----------|----------|----------------------------------------------|
+  | `variantId`     | number   | yes      | On-chain variant ID from `addVariant`         |
+  | `serialNumbers` | string[] | yes      | Array of raw serial number strings to hash   |
+
+  ## Success Response `202 Accepted`
+  ```json
+  {
+    "success": true,
+    "data": {
+      "variantId": 1,
+      "registered": 3,
+      "txHash": "0xdef456...",
+      "productIds": [
+        "0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+        "0x2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3",
+        "0x19581e27de7ced00ff1ce50b2047e7a567c76b1cbaebabe5ef03f7c3017bb5b7"
+      ]
+    }
+  }
+  ```
+
+  ## Error Responses
+  | Status | Code                     | Scenario                                       |
+  |--------|--------------------------|------------------------------------------------|
+  | `401`  | `UNAUTHORIZED`           | Missing or invalid JWT token                   |
+  | `400`  | `VALIDATION_ERROR`       | Missing fields or empty `serialNumbers` array  |
+  | `404`  | `VARIANT_NOT_FOUND`      | Provided `variantId` does not exist on-chain   |
+  | `409`  | `PRODUCT_ALREADY_EXISTS` | One or more hashed IDs are already registered  |
+  | `500`  | `BLOCKCHAIN_TX_FAILED`   | Contract reverted or RPC unreachable           |
+
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "PRODUCT_ALREADY_EXISTS",
+      "message": "One or more product IDs in the batch are already registered.",
+      "conflictingIds": ["OIL-PERT-2024-000001"]
+    }
+  }
+  ```
