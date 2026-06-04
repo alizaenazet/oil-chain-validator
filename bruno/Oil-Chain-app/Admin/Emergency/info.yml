@@ -1,0 +1,9 @@
+info:
+  name: Emergency (Admin)
+  type: folder
+  seq: 3
+
+docs: |-
+  # Admin — Emergency
+  Emergency revocation via `emergencyRevoke(bytes32[])`.
+  Used to invalidate compromised QR codes before consumer scanning.

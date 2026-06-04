@@ -1,0 +1,26 @@
+info:
+  name: Endpoin example
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: google.com?param-test=test-value
+  headers:
+    - name: Access-Control-Allow-Headers
+      value: test
+  params:
+    - name: param-test
+      value: test-value
+      type: query
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  # Docs Example
+  > test for docs with markdown format.

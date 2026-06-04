@@ -1,0 +1,10 @@
+info:
+  name: Stats
+  type: folder
+  seq: 6
+
+docs: |-
+  # Stats (Public — Cached)
+  System-wide statistics from the OilValidator contract (`getSystemStats()`).
+  Heavy to query; results are cached in Redis with a configurable TTL
+  (default: 60 seconds) to prevent RPC spam.

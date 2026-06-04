@@ -1,3 +1,14 @@
+# Starting product
+
+## Database Container
+
+Spin up:
+> docker compose up -d
+Tear down (keep data):
+> docker compose down
+Tear down + wipe volumes:
+> docker compose down -v
+
 # Dokumen Desain Teknis: Sistem Verifikasi Keaslian Oli Berbasis Blockchain
 
 ## 1. Pendahuluan

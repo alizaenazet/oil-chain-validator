@@ -1,0 +1,115 @@
+info:
+  name: Validate Product
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/validate/:serialNumber"
+  params:
+    - name: serialNumber
+      value: "OIL-PERT-2024-000001"
+      type: path
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "scanLocation": "Jakarta Selatan, DKI Jakarta, ID"
+      }
+  auth: none
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: in
+      value: "200,400"
+
+settings:
+  encodeUrl: true
+  timeout: 60000
+  followRedirects: false
+
+docs: |-
+  # POST /validate/:serialNumber
+
+  Consumer-facing validation endpoint. Triggered automatically when a
+  QR Code is scanned and the browser loads the frontend URL.
+
+  Maps to smart contract: `validateProduct(bytes32 productId, string scanLocation)`
+
+  **Public:** No authentication required.
+
+  ## Gas Relayer Pattern
+  The consumer does NOT need a crypto wallet or ETH.
+  The backend acts as a Gas Relayer:
+    1. Receives the raw `serialNumber` from the URL path.
+    2. Hashes it off-chain: `keccak256(abi.encodePacked(serialNumber))`.
+    3. Submits `validateProduct(bytes32, scanLocation)` using the company wallet.
+    4. Returns the final product status to the frontend.
+
+  ## Path Parameter
+  | Param          | Type   | Description                                      |
+  |----------------|--------|--------------------------------------------------|
+  | `serialNumber` | string | Raw serial number encoded in the scanned QR code |
+
+  ## Request Body
+  | Field          | Type   | Required | Description                                         |
+  |----------------|--------|----------|-----------------------------------------------------|
+  | `scanLocation` | string | yes      | Human-readable or geohash location of the scan     |
+
+  ## Success Response `200 OK` — Product is ORIGINAL (first scan)
+  ```json
+  {
+    "success": true,
+    "data": {
+      "status": "VALID",
+      "productId": "0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+      "serialNumber": "OIL-PERT-2024-000001",
+      "scanLocation": "Jakarta Selatan, DKI Jakarta, ID",
+      "validatedAt": "2024-07-15T10:30:00.000Z",
+      "txHash": "0xjkl012...",
+      "variant": {
+        "variantId": 1,
+        "brand": "Pertamina",
+        "oilType": "SAE 10W-40"
+      }
+    }
+  }
+  ```
+
+  ## Error Response `400 Bad Request` — Already Validated (COUNTERFEIT WARNING)
+  Returned when the QR code has already been scanned once. The frontend MUST
+  display a red counterfeit warning screen using this payload.
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "ALREADY_VALIDATED",
+      "message": "This product has already been validated. It may be counterfeit.",
+      "data": {
+        "status": "USED",
+        "productId": "0x7f83b165...",
+        "serialNumber": "OIL-PERT-2024-000001",
+        "firstValidatedAt": "2024-07-10T08:15:00.000Z",
+        "firstScanLocation": "Bandung, Jawa Barat, ID",
+        "variant": {
+          "variantId": 1,
+          "brand": "Pertamina",
+          "oilType": "SAE 10W-40"
+        }
+      }
+    }
+  }
+  ```
+
+  ## Other Error Responses
+  | Status | Code                 | Scenario                                          |
+  |--------|----------------------|---------------------------------------------------|
+  | `400`  | `ALREADY_VALIDATED`  | QR already scanned — counterfeit warning          |
+  | `400`  | `PRODUCT_REVOKED`    | Product was emergency-revoked by Admin            |
+  | `400`  | `VALIDATION_ERROR`   | Missing `scanLocation` in body                    |
+  | `404`  | `PRODUCT_NOT_FOUND`  | Serial number not registered on-chain             |
+  | `500`  | `BLOCKCHAIN_TX_FAILED` | Contract reverted or RPC unreachable            |

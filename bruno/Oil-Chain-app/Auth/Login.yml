@@ -1,0 +1,84 @@
+info:
+  name: Login
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/login"
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "username": "admin",
+        "password": "your_admin_password"
+      }
+  auth: none
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        // Auto-save the JWT token for all subsequent requests
+        if (res.status === 200 && res.body.data && res.body.data.token) {
+          bru.setVar("token", res.body.data.token);
+          console.log("Token saved:", res.body.data.token);
+        }
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.success
+      operator: eq
+      value: "true"
+    - expression: res.body.data.token
+      operator: isString
+
+settings:
+  encodeUrl: true
+  timeout: 10000
+  followRedirects: false
+
+docs: |-
+  # POST /auth/login
+
+  Authenticates the Admin and returns a signed JWT token.
+  The after-response script automatically stores the token in the
+  `token` collection variable.
+
+  ## Request Body
+  | Field      | Type   | Required | Description             |
+  |------------|--------|----------|-------------------------|
+  | `username` | string | yes      | Admin username          |
+  | `password` | string | yes      | Admin password          |
+
+  ## Success Response `200 OK`
+  ```json
+  {
+    "success": true,
+    "data": {
+      "token": "<jwt_string>",
+      "expiresIn": 86400
+    }
+  }
+  ```
+
+  ## Error Responses
+  | Status | Code                  | Scenario                    |
+  |--------|-----------------------|-----------------------------|
+  | `401`  | `INVALID_CREDENTIALS` | Wrong username or password  |
+  | `400`  | `VALIDATION_ERROR`    | Missing required fields     |
+  | `500`  | `INTERNAL_ERROR`      | Server-side error           |
+
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "INVALID_CREDENTIALS",
+      "message": "Username or password is incorrect."
+    }
+  }
+  ```

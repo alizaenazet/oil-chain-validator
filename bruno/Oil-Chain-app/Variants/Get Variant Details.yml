@@ -1,0 +1,70 @@
+info:
+  name: Get Variant Details
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/variants/:variantId"
+  params:
+    - name: variantId
+      value: "1"
+      type: path
+  headers:
+    - name: Accept
+      value: application/json
+  auth: none
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: in
+      value: "200,404"
+    - expression: res.body.success
+      operator: eq
+      value: "true"
+
+settings:
+  encodeUrl: true
+  timeout: 15000
+  followRedirects: false
+
+docs: |-
+  # GET /variants/:variantId
+
+  Returns master data for a specific oil variant.
+  Maps to smart contract: `getVariantDetails(uint256 variantId)`
+
+  **Public:** No authentication required.
+  **Cached:** Response is cached in Redis (TTL: 300 seconds).
+  Variant data is immutable once created, making it safe to cache aggressively.
+
+  ## Path Parameter
+  | Param       | Type   | Description                         |
+  |-------------|--------|-------------------------------------|
+  | `variantId` | number | On-chain variant ID (uint256)       |
+
+  ## Success Response `200 OK`
+  ```json
+  {
+    "success": true,
+    "data": {
+      "variantId": 1,
+      "brand": "Pertamina",
+      "oilType": "SAE 10W-40",
+      "createdAt": "2024-07-01T00:00:00.000Z",
+      "totalRegistered": 1000
+    },
+    "meta": {
+      "cachedAt": "2024-07-15T10:00:00.000Z",
+      "cacheSource": "redis"
+    }
+  }
+  ```
+
+  ## Error Responses
+  | Status | Code                | Scenario                              |
+  |--------|---------------------|---------------------------------------|
+  | `400`  | `VALIDATION_ERROR`  | `variantId` is not a valid number     |
+  | `404`  | `VARIANT_NOT_FOUND` | Variant ID does not exist on-chain    |
+  | `500`  | `RPC_ERROR`         | Blockchain RPC node unreachable       |

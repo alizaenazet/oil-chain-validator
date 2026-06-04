@@ -1,0 +1,88 @@
+info:
+  name: Add Variant
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/variants"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Authorization
+      value: "Bearer {{token}}"
+  body:
+    type: json
+    data: |-
+      {
+        "brand": "Pertamina",
+        "oilType": "SAE 10W-40"
+      }
+  auth: none
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+    - expression: res.body.success
+      operator: eq
+      value: "true"
+    - expression: res.body.data.variantId
+      operator: isNumber
+
+settings:
+  encodeUrl: true
+  timeout: 60000
+  followRedirects: false
+
+docs: |-
+  # POST /admin/variants
+
+  Adds a new oil variant master record on-chain.
+  Maps to smart contract: `addVariant(string brand, string oilType)`
+
+  **Protected:** Requires Admin JWT Bearer token.
+
+  ## Backend Logic
+  1. Validates JWT token (middleware).
+  2. Calls `addVariant(brand, oilType)` on the OilValidator contract.
+  3. Waits for transaction confirmation (tx receipt).
+  4. Returns the emitted `variantId` from the transaction log.
+
+  ## Request Body
+  | Field     | Type   | Required | Description                       |
+  |-----------|--------|----------|-----------------------------------|
+  | `brand`   | string | yes      | Oil brand name (e.g. "Pertamina") |
+  | `oilType` | string | yes      | Oil specification (e.g. "10W-40") |
+
+  ## Success Response `201 Created`
+  ```json
+  {
+    "success": true,
+    "data": {
+      "variantId": 1,
+      "brand": "Pertamina",
+      "oilType": "SAE 10W-40",
+      "txHash": "0xabc123..."
+    }
+  }
+  ```
+
+  ## Error Responses
+  | Status | Code                   | Scenario                              |
+  |--------|------------------------|---------------------------------------|
+  | `401`  | `UNAUTHORIZED`         | Missing or invalid JWT token          |
+  | `400`  | `VALIDATION_ERROR`     | Missing `brand` or `oilType` fields   |
+  | `409`  | `VARIANT_EXISTS`       | Variant with same brand+type exists   |
+  | `500`  | `BLOCKCHAIN_TX_FAILED` | Contract reverted or RPC unreachable  |
+
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "BLOCKCHAIN_TX_FAILED",
+      "message": "Transaction reverted by the smart contract."
+    }
+  }
+  ```

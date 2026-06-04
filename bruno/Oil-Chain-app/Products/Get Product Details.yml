@@ -1,0 +1,81 @@
+info:
+  name: Get Product Details
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/products/:serialNumber"
+  params:
+    - name: serialNumber
+      value: "OIL-PERT-2024-000001"
+      type: path
+  headers:
+    - name: Accept
+      value: application/json
+  auth: none
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: in
+      value: "200,404"
+    - expression: res.body.success
+      operator: eq
+      value: "true"
+
+settings:
+  encodeUrl: true
+  timeout: 15000
+  followRedirects: false
+
+docs: |-
+  # GET /products/:serialNumber
+
+  Returns the full on-chain state for a single product.
+  Maps to smart contract: `getProductDetails(bytes32 productId)`
+
+  **Public:** No authentication required.
+
+  ## Backend Logic
+  1. Hashes `serialNumber` → `bytes32` via `keccak256`.
+  2. Calls `getProductDetails(bytes32)` (view call, no gas).
+  3. Returns the decoded struct.
+
+  ## Path Parameter
+  | Param          | Type   | Description                                      |
+  |----------------|--------|--------------------------------------------------|
+  | `serialNumber` | string | Raw serial number (will be hashed by backend)    |
+
+  ## Success Response `200 OK`
+  ```json
+  {
+    "success": true,
+    "data": {
+      "productId": "0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+      "serialNumber": "OIL-PERT-2024-000001",
+      "status": "USED",
+      "variantId": 1,
+      "variant": {
+        "brand": "Pertamina",
+        "oilType": "SAE 10W-40"
+      },
+      "validatedAt": "2024-07-15T10:30:00.000Z",
+      "scanLocation": "Jakarta Selatan, DKI Jakarta, ID",
+      "registeredAt": "2024-07-01T00:00:00.000Z"
+    }
+  }
+  ```
+
+  ## Possible `status` values
+  | Value    | Meaning                                                  |
+  |----------|----------------------------------------------------------|
+  | `NEW`    | Registered, not yet scanned by consumer                  |
+  | `USED`   | Already validated — first scan consumed this identity    |
+  | `REVOKED`| Invalidated by Admin via `emergencyRevoke`               |
+
+  ## Error Responses
+  | Status | Code                | Scenario                                     |
+  |--------|---------------------|----------------------------------------------|
+  | `404`  | `PRODUCT_NOT_FOUND` | Serial number not registered on-chain        |
+  | `500`  | `RPC_ERROR`         | Blockchain RPC node unreachable              |
