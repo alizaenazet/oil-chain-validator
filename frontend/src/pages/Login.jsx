@@ -2,20 +2,29 @@ import { useState } from "react";
 import { login } from "../services/authService";
 
 function Login() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] =
+    useState("");
+
+  const [password, setPassword] =
+    useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
     try {
-      const data = await login(username, password);
+      const data = await login(
+        username,
+        password
+      );
 
-      localStorage.setItem("token", data.token);
+      localStorage.setItem(
+        "token",
+        data.token
+      );
 
-      alert("Login berhasil!");
+      alert("Login berhasil");
     } catch (error) {
-      alert("Login gagal!");
+      alert("Login gagal");
       console.error(error);
     }
   };
@@ -29,7 +38,9 @@ function Login() {
           type="text"
           placeholder="Username"
           value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          onChange={(e) =>
+            setUsername(e.target.value)
+          }
         />
 
         <br />
@@ -39,7 +50,9 @@ function Login() {
           type="password"
           placeholder="Password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) =>
+            setPassword(e.target.value)
+          }
         />
 
         <br />
