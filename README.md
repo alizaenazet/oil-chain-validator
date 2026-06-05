@@ -2,12 +2,19 @@
 
 ## Database Container
 
-Spin up:
-> docker compose up -d
-Tear down (keep data):
-> docker compose down
-Tear down + wipe volumes:
-> docker compose down -v
+Only **Redis** runs inside Docker. SQLite is file-based and lives at `./data/oilchain.db`.
+
+Spin up Redis:
+`docker compose up -d`
+Tear down Redis (keep data):
+`docker compose down`
+Tear down Redis + wipe volumes:
+`docker compose down -v`
+
+## Database explanation
+
+**SQLite**: for storing user data (file-based, no container needed).  
+**Redis**: for caching the user Scan QR relayer.
 
 # Dokumen Desain Teknis: Sistem Verifikasi Keaslian Oli Berbasis Blockchain
 

@@ -40,6 +40,12 @@ pnpm-debug.log*
 # Snapshot cheatcodes output
 /snapshots
 
+# SQLite database files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
 # Editor and OS files
 .DS_Store
 .idea/
