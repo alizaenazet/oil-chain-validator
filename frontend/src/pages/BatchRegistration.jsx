@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Navbar from "../components/Navbar";
 
 function BatchRegistration() {
   const [serials, setSerials] =
@@ -12,6 +13,7 @@ function BatchRegistration() {
 
   return (
     <div>
+        <Navbar />
       <h1>Batch Registration</h1>
 
       <form onSubmit={handleSubmit}>

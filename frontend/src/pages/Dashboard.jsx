@@ -1,3 +1,5 @@
+import Navbar from "../components/Navbar";
+
 function Dashboard() {
   const stats = {
     totalVariants: 5,
@@ -7,6 +9,8 @@ function Dashboard() {
 
   return (
     <div>
+      <Navbar />
+
       <h1>Dashboard</h1>
 
       <div>

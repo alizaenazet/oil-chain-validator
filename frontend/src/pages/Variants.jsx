@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Navbar from "../components/Navbar";
 
 function Variants() {
   const [brand, setBrand] = useState("");
@@ -15,6 +16,7 @@ function Variants() {
 
   return (
     <div>
+        <Navbar />
       <h1>Variants</h1>
 
       <form onSubmit={handleSubmit}>

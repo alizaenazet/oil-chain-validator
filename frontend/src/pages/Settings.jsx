@@ -1,6 +1,9 @@
+import Navbar from "../components/Navbar";
+
 function Settings() {
   return (
     <div>
+        <Navbar />
       <h1>Settings</h1>
 
       <h3>Transfer Ownership</h3>
