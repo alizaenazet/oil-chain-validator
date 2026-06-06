@@ -2,9 +2,9 @@ import {
   BrowserRouter,
   Routes,
   Route,
+  Navigate,
 } from "react-router-dom";
 
-import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
 import Verify from "../pages/Verify";
@@ -19,11 +19,13 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Redirect ke Login */}
         <Route
           path="/"
-          element={<Home />}
+          element={<Navigate to="/login" />}
         />
 
+        {/* Public Routes */}
         <Route
           path="/login"
           element={<Login />}
@@ -34,6 +36,7 @@ function AppRoutes() {
           element={<Verify />}
         />
 
+        {/* Protected Routes */}
         <Route
           path="/dashboard"
           element={

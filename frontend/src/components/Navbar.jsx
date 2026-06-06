@@ -1,8 +1,16 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function Navbar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+
+    navigate("/login");
+  };
+
   return (
-    <nav
+    <div
       style={{
         padding: "15px",
         borderBottom: "1px solid #ccc",
@@ -22,7 +30,7 @@ function Navbar() {
       {" | "}
 
       <Link to="/batches">
-        Batch Registration
+        Batches
       </Link>
 
       {" | "}
@@ -33,10 +41,12 @@ function Navbar() {
 
       {" | "}
 
-      <Link to="/login">
+      <button
+        onClick={handleLogout}
+      >
         Logout
-      </Link>
-    </nav>
+      </button>
+    </div>
   );
 }
 
