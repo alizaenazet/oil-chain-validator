@@ -1,21 +1,26 @@
 import { useEffect, useState } from "react";
-import Navbar from "../components/Navbar";
+import AdminLayout from "../components/AdminLayout";
 
 function BatchRegistration() {
-  const [variantId, setVariantId] = useState("");
-  const [serials, setSerials] = useState("");
+  const [variantId, setVariantId] =
+    useState("");
 
-  const [registeredBatches, setRegisteredBatches] =
-    useState(() => {
-      const savedBatches =
-        localStorage.getItem(
-          "registeredBatches"
-        );
+  const [serials, setSerials] =
+    useState("");
 
-      return savedBatches
-        ? JSON.parse(savedBatches)
-        : [];
-    });
+  const [
+    registeredBatches,
+    setRegisteredBatches,
+  ] = useState(() => {
+    const savedBatches =
+      localStorage.getItem(
+        "registeredBatches"
+      );
+
+    return savedBatches
+      ? JSON.parse(savedBatches)
+      : [];
+  });
 
   useEffect(() => {
     localStorage.setItem(
@@ -29,14 +34,16 @@ function BatchRegistration() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!variantId || !serials) return;
+    if (!variantId || !serials)
+      return;
 
-    const serialList = serials
-      .split("\n")
-      .filter(
-        (item) =>
-          item.trim() !== ""
-      );
+    const serialList =
+      serials
+        .split("\n")
+        .filter(
+          (item) =>
+            item.trim() !== ""
+        );
 
     const newBatch = {
       id: Date.now(),
@@ -56,171 +63,241 @@ function BatchRegistration() {
   };
 
   return (
-    <div>
-      <Navbar />
-
-      <div style={{ padding: "20px" }}>
-        <h1>
+    <AdminLayout>
+      <div
+        style={{
+          padding: "20px",
+        }}
+      >
+        <h1
+          style={{
+            color: "#1e293b",
+            marginBottom: "5px",
+          }}
+        >
           Batch Registration
         </h1>
 
-        <div
+        <p
           style={{
-            border: "1px solid #ddd",
-            padding: "20px",
-            borderRadius: "8px",
-            marginTop: "20px",
+            color: "#64748b",
+            marginBottom: "25px",
           }}
         >
+          Register product batches
+          before distributing
+          lubricant products.
+        </p>
+
+        <div
+          style={{
+            background: "white",
+            padding: "25px",
+            borderRadius: "15px",
+            boxShadow:
+              "0 3px 12px rgba(0,0,0,0.08)",
+            marginBottom: "30px",
+          }}
+        >
+          <h2>
+            Create New Batch
+          </h2>
+
           <form
             onSubmit={
               handleSubmit
             }
           >
-            <label>
-              Variant ID
-            </label>
-
-            <br />
-
-            <input
-              type="number"
-              value={variantId}
-              onChange={(e) =>
-                setVariantId(
-                  e.target.value
-                )
-              }
+            <div
               style={{
-                width: "300px",
-                padding: "8px",
+                marginBottom: "15px",
               }}
-            />
+            >
+              <label>
+                Variant ID
+              </label>
 
-            <br />
-            <br />
+              <br />
 
-            <label>
-              Serial Numbers
-            </label>
+              <input
+                type="number"
+                value={variantId}
+                onChange={(e) =>
+                  setVariantId(
+                    e.target.value
+                  )
+                }
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  marginTop: "5px",
+                  borderRadius: "8px",
+                  border:
+                    "1px solid #cbd5e1",
+                }}
+              />
+            </div>
 
-            <br />
+            <div
+              style={{
+                marginBottom: "20px",
+              }}
+            >
+              <label>
+                Serial Numbers
+              </label>
 
-            <textarea
-              rows="10"
-              cols="60"
-              placeholder={`SN001
+              <br />
+
+              <textarea
+                rows="10"
+                placeholder={`SN001
 SN002
 SN003`}
-              value={serials}
-              onChange={(e) =>
-                setSerials(
-                  e.target.value
-                )
-              }
-              style={{
-                padding: "8px",
-              }}
-            />
-
-            <br />
-            <br />
+                value={serials}
+                onChange={(e) =>
+                  setSerials(
+                    e.target.value
+                  )
+                }
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  marginTop: "5px",
+                  borderRadius: "8px",
+                  border:
+                    "1px solid #cbd5e1",
+                }}
+              />
+            </div>
 
             <button
               type="submit"
+              style={{
+                background:
+                  "#2563eb",
+                color: "white",
+                border: "none",
+                padding:
+                  "12px 20px",
+                borderRadius:
+                  "8px",
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
             >
               Register Batch
             </button>
           </form>
         </div>
 
-        <h2
+        <div
           style={{
-            marginTop: "30px",
+            background: "white",
+            padding: "25px",
+            borderRadius: "15px",
+            boxShadow:
+              "0 3px 12px rgba(0,0,0,0.08)",
           }}
         >
-          Registered Batches
-        </h2>
+          <h2
+            style={{
+              marginBottom: "20px",
+            }}
+          >
+            Registered Batches
+          </h2>
 
-        {registeredBatches.length ===
-        0 ? (
-          <p>
-            No batches
-            registered yet.
-          </p>
-        ) : (
-          registeredBatches.map(
-            (batch) => (
-              <div
-                key={batch.id}
-                style={{
-                  border:
-                    "1px solid #ddd",
-                  borderRadius:
-                    "8px",
-                  padding:
-                    "15px",
-                  marginBottom:
-                    "15px",
-                }}
-              >
-                <p>
-                  <strong>
-                    Batch ID:
-                  </strong>{" "}
-                  {batch.id}
-                </p>
+          {registeredBatches.length ===
+          0 ? (
+            <p>
+              No batches
+              registered yet.
+            </p>
+          ) : (
+            registeredBatches.map(
+              (batch) => (
+                <div
+                  key={batch.id}
+                  style={{
+                    border:
+                      "1px solid #e2e8f0",
+                    borderRadius:
+                      "12px",
+                    padding:
+                      "15px",
+                    marginBottom:
+                      "15px",
+                    background:
+                      "#f8fafc",
+                  }}
+                >
+                  <p>
+                    <strong>
+                      Batch ID:
+                    </strong>{" "}
+                    {batch.id}
+                  </p>
 
-                <p>
-                  <strong>
-                    Variant ID:
-                  </strong>{" "}
-                  {
-                    batch.variantId
-                  }
-                </p>
+                  <p>
+                    <strong>
+                      Variant ID:
+                    </strong>{" "}
+                    {
+                      batch.variantId
+                    }
+                  </p>
 
-                <p>
-                  <strong>
-                    Total
-                    Products:
-                  </strong>{" "}
-                  {
-                    batch.totalProducts
-                  }
-                </p>
+                  <p>
+                    <strong>
+                      Total Products:
+                    </strong>{" "}
+                    {
+                      batch.totalProducts
+                    }
+                  </p>
 
-                <details>
-                  <summary>
-                    View
-                    Serials
-                  </summary>
+                  <details>
+                    <summary
+                      style={{
+                        cursor:
+                          "pointer",
+                        color:
+                          "#2563eb",
+                        fontWeight:
+                          "bold",
+                      }}
+                    >
+                      View Serial
+                      Numbers
+                    </summary>
 
-                  <ul>
-                    {batch.serials.map(
-                      (
-                        serial,
-                        index
-                      ) => (
-                        <li
-                          key={
-                            index
-                          }
-                        >
-                          {
-                            serial
-                          }
-                        </li>
-                      )
-                    )}
-                  </ul>
-                </details>
-              </div>
+                    <ul>
+                      {batch.serials.map(
+                        (
+                          serial,
+                          index
+                        ) => (
+                          <li
+                            key={
+                              index
+                            }
+                          >
+                            {
+                              serial
+                            }
+                          </li>
+                        )
+                      )}
+                    </ul>
+                  </details>
+                </div>
+              )
             )
-          )
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
 
