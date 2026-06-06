@@ -13,6 +13,7 @@ import Variants from "../pages/Variants";
 import BatchRegistration from "../pages/BatchRegistration";
 import Settings from "../pages/Settings";
 import NotFound from "../pages/NotFound";
+import QRScanner from "../pages/QRScanner";
 
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -36,6 +37,10 @@ function AppRoutes() {
           path="/verify/:serialNumber"
           element={<Verify />}
         />
+        <Route
+  path="/scanner"
+  element={<QRScanner />}
+/>
 
         {/* Protected Routes */}
         <Route

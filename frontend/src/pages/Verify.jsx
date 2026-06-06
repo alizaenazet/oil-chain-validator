@@ -4,19 +4,22 @@ import { useParams } from "react-router-dom";
 function Verify() {
   const { serialNumber } = useParams();
 
-  const [location, setLocation] = useState(
-    "Loading location..."
-  );
+  const [location, setLocation] =
+    useState("Loading location...");
 
-  const [verificationResult, setVerificationResult] =
-    useState(null);
+  const [
+    verificationResult,
+    setVerificationResult,
+  ] = useState(null);
 
-  // Ambil lokasi pengguna
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+        const lat =
+          position.coords.latitude;
+
+        const lng =
+          position.coords.longitude;
 
         setLocation(`${lat}, ${lng}`);
       },
@@ -30,7 +33,6 @@ function Verify() {
     );
   }, []);
 
-  // Ambil data dari session storage saat halaman dibuka
   useEffect(() => {
     const cached =
       sessionStorage.getItem(
@@ -44,11 +46,13 @@ function Verify() {
     }
   }, []);
 
-  // Simulasi validasi produk
   const simulateValidation = () => {
     const data = {
       serialNumber,
-      status: "USED",
+      status: "VALID",
+      productName:
+        "Shell Helix Ultra",
+      oilType: "5W-30",
       verifiedAt:
         new Date().toLocaleString(),
       location,
@@ -63,59 +67,158 @@ function Verify() {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Verify Product</h1>
-
-      <p>
-        <strong>Serial Number:</strong>{" "}
-        {serialNumber}
-      </p>
-
-      <p>
-        <strong>Location:</strong>{" "}
-        {location}
-      </p>
-
-      <button onClick={simulateValidation}>
-        Simulate Verify
-      </button>
-
-      {verificationResult && (
-        <div
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#f8fafc",
+        padding: "40px",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: "700px",
+          margin: "0 auto",
+          background: "white",
+          borderRadius: "16px",
+          padding: "30px",
+          boxShadow:
+            "0 10px 25px rgba(0,0,0,0.08)",
+        }}
+      >
+        <h1
           style={{
-            marginTop: "20px",
-            padding: "15px",
-            border: "1px solid #ccc",
-            borderRadius: "8px",
+            color: "#1e293b",
+            marginBottom: "10px",
           }}
         >
-          <h3>Verification Result</h3>
+          Product Verification
+        </h1>
 
+        <p
+          style={{
+            color: "#64748b",
+            marginBottom: "25px",
+          }}
+        >
+          Validate lubricant
+          authenticity using the
+          product serial number.
+        </p>
+
+        <div
+          style={{
+            background: "#f8fafc",
+            borderRadius: "10px",
+            padding: "15px",
+            marginBottom: "20px",
+          }}
+        >
           <p>
-            <strong>Serial:</strong>{" "}
-            {
-              verificationResult.serialNumber
-            }
+            <strong>
+              Serial Number:
+            </strong>{" "}
+            {serialNumber}
           </p>
 
           <p>
-            <strong>Status:</strong>{" "}
-            {verificationResult.status}
-          </p>
-
-          <p>
-            <strong>Verified At:</strong>{" "}
-            {
-              verificationResult.verifiedAt
-            }
-          </p>
-
-          <p>
-            <strong>Location:</strong>{" "}
-            {verificationResult.location}
+            <strong>
+              Current Location:
+            </strong>{" "}
+            {location}
           </p>
         </div>
-      )}
+
+        <button
+          onClick={simulateValidation}
+          style={{
+            background: "#2563eb",
+            color: "white",
+            border: "none",
+            padding: "12px 20px",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontWeight: "bold",
+          }}
+        >
+          Verify Product
+        </button>
+
+        {verificationResult && (
+          <div
+            style={{
+              marginTop: "25px",
+              background: "#ecfdf5",
+              border:
+                "1px solid #86efac",
+              borderRadius: "12px",
+              padding: "20px",
+            }}
+          >
+            <h2
+              style={{
+                color: "#15803d",
+                marginTop: 0,
+              }}
+            >
+              ✓ Verification Success
+            </h2>
+
+            <p>
+              <strong>
+                Serial Number:
+              </strong>{" "}
+              {
+                verificationResult.serialNumber
+              }
+            </p>
+
+            <p>
+              <strong>
+                Product:
+              </strong>{" "}
+              {
+                verificationResult.productName
+              }
+            </p>
+
+            <p>
+              <strong>
+                Oil Type:
+              </strong>{" "}
+              {
+                verificationResult.oilType
+              }
+            </p>
+
+            <p>
+              <strong>
+                Status:
+              </strong>{" "}
+              {
+                verificationResult.status
+              }
+            </p>
+
+            <p>
+              <strong>
+                Verified At:
+              </strong>{" "}
+              {
+                verificationResult.verifiedAt
+              }
+            </p>
+
+            <p>
+              <strong>
+                Scan Location:
+              </strong>{" "}
+              {
+                verificationResult.location
+              }
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
