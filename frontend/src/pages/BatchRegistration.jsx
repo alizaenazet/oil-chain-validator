@@ -8,6 +8,9 @@ function BatchRegistration() {
   const [serials, setSerials] =
     useState("");
 
+  const [loading, setLoading] =
+    useState(false);
+
   const [
     registeredBatches,
     setRegisteredBatches,
@@ -31,35 +34,43 @@ function BatchRegistration() {
     );
   }, [registeredBatches]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!variantId || !serials)
       return;
 
-    const serialList =
-      serials
-        .split("\n")
-        .filter(
-          (item) =>
-            item.trim() !== ""
-        );
+    setLoading(true);
 
-    const newBatch = {
-      id: Date.now(),
-      variantId,
-      totalProducts:
-        serialList.length,
-      serials: serialList,
-    };
+    setTimeout(() => {
+      const serialList =
+        serials
+          .split("\n")
+          .filter(
+            (item) =>
+              item.trim() !== ""
+          );
 
-    setRegisteredBatches([
-      ...registeredBatches,
-      newBatch,
-    ]);
+      const newBatch = {
+        id: Date.now(),
+        variantId,
+        totalProducts:
+          serialList.length,
+        serials: serialList,
+      };
 
-    setVariantId("");
-    setSerials("");
+      setRegisteredBatches(
+        (prev) => [
+          ...prev,
+          newBatch,
+        ]
+      );
+
+      setVariantId("");
+      setSerials("");
+
+      setLoading(false);
+    }, 2000);
   };
 
   return (
@@ -122,6 +133,7 @@ function BatchRegistration() {
               <input
                 type="number"
                 value={variantId}
+                disabled={loading}
                 onChange={(e) =>
                   setVariantId(
                     e.target.value
@@ -151,10 +163,11 @@ function BatchRegistration() {
 
               <textarea
                 rows="10"
+                value={serials}
+                disabled={loading}
                 placeholder={`SN001
 SN002
 SN003`}
-                value={serials}
                 onChange={(e) =>
                   setSerials(
                     e.target.value
@@ -173,20 +186,29 @@ SN003`}
 
             <button
               type="submit"
+              disabled={loading}
               style={{
                 background:
-                  "#2563eb",
+                  loading
+                    ? "#94a3b8"
+                    : "#2563eb",
                 color: "white",
                 border: "none",
                 padding:
                   "12px 20px",
                 borderRadius:
                   "8px",
-                cursor: "pointer",
-                fontWeight: "bold",
+                cursor:
+                  loading
+                    ? "not-allowed"
+                    : "pointer",
+                fontWeight:
+                  "bold",
               }}
             >
-              Register Batch
+              {loading
+                ? "Registering Batch..."
+                : "Register Batch"}
             </button>
           </form>
         </div>
