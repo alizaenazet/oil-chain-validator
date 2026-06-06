@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Navbar from "../components/Navbar";
+import AdminLayout from "../components/AdminLayout";
 
 function Variants() {
   const [brand, setBrand] = useState("");
@@ -61,9 +61,7 @@ function Variants() {
   };
 
   return (
-    <div>
-      <Navbar />
-
+    <AdminLayout>
       <h1>Variants</h1>
 
       <form onSubmit={handleSubmit}>
@@ -131,7 +129,7 @@ function Variants() {
           ))}
         </tbody>
       </table>
-    </div>
+    </AdminLayout>
   );
 }
 
