@@ -4,6 +4,8 @@ import AdminLayout from "../components/AdminLayout";
 function Variants() {
   const [brand, setBrand] = useState("");
   const [oilType, setOilType] = useState("");
+  const [searchTerm, setSearchTerm] =
+    useState("");
 
   const [variants, setVariants] = useState(() => {
     const savedVariants =
@@ -53,6 +55,13 @@ function Variants() {
   };
 
   const handleDelete = (id) => {
+    const confirmed =
+      window.confirm(
+        "Delete this variant?"
+      );
+
+    if (!confirmed) return;
+
     setVariants(
       variants.filter(
         (variant) =>
@@ -60,6 +69,15 @@ function Variants() {
       )
     );
   };
+
+  const filteredVariants =
+    variants.filter((variant) =>
+      variant.brand
+        .toLowerCase()
+        .includes(
+          searchTerm.toLowerCase()
+        )
+    );
 
   return (
     <AdminLayout>
@@ -198,6 +216,25 @@ function Variants() {
             Variant List
           </h2>
 
+          <input
+            type="text"
+            placeholder="Search Brand..."
+            value={searchTerm}
+            onChange={(e) =>
+              setSearchTerm(
+                e.target.value
+              )
+            }
+            style={{
+              width: "300px",
+              padding: "10px",
+              borderRadius: "8px",
+              border:
+                "1px solid #cbd5e1",
+              marginBottom: "20px",
+            }}
+          />
+
           <div
             style={{
               overflowX: "auto",
@@ -256,81 +293,100 @@ function Variants() {
               </thead>
 
               <tbody>
-                {variants.map(
-                  (variant) => (
-                    <tr
-                      key={
-                        variant.id
-                      }
+                {filteredVariants.length ===
+                0 ? (
+                  <tr>
+                    <td
+                      colSpan="4"
                       style={{
-                        borderBottom:
-                          "1px solid #e2e8f0",
+                        padding:
+                          "20px",
+                        textAlign:
+                          "center",
+                        color:
+                          "#64748b",
                       }}
                     >
-                      <td
-                        style={{
-                          padding:
-                            "12px",
-                        }}
-                      >
-                        {
+                      No variants found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredVariants.map(
+                    (variant) => (
+                      <tr
+                        key={
                           variant.id
                         }
-                      </td>
-
-                      <td
                         style={{
-                          padding:
-                            "12px",
+                          borderBottom:
+                            "1px solid #e2e8f0",
                         }}
                       >
-                        {
-                          variant.brand
-                        }
-                      </td>
-
-                      <td
-                        style={{
-                          padding:
-                            "12px",
-                        }}
-                      >
-                        {
-                          variant.oilType
-                        }
-                      </td>
-
-                      <td
-                        style={{
-                          padding:
-                            "12px",
-                        }}
-                      >
-                        <button
-                          onClick={() =>
-                            handleDelete(
-                              variant.id
-                            )
-                          }
+                        <td
                           style={{
-                            background:
-                              "#ef4444",
-                            color:
-                              "white",
-                            border:
-                              "none",
                             padding:
-                              "8px 14px",
-                            borderRadius:
-                              "6px",
-                            cursor:
-                              "pointer",
+                              "12px",
                           }}
                         >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
+                          {
+                            variant.id
+                          }
+                        </td>
+
+                        <td
+                          style={{
+                            padding:
+                              "12px",
+                          }}
+                        >
+                          {
+                            variant.brand
+                          }
+                        </td>
+
+                        <td
+                          style={{
+                            padding:
+                              "12px",
+                          }}
+                        >
+                          {
+                            variant.oilType
+                          }
+                        </td>
+
+                        <td
+                          style={{
+                            padding:
+                              "12px",
+                          }}
+                        >
+                          <button
+                            onClick={() =>
+                              handleDelete(
+                                variant.id
+                              )
+                            }
+                            style={{
+                              background:
+                                "#ef4444",
+                              color:
+                                "white",
+                              border:
+                                "none",
+                              padding:
+                                "8px 14px",
+                              borderRadius:
+                                "6px",
+                              cursor:
+                                "pointer",
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    )
                   )
                 )}
               </tbody>
