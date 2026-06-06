@@ -12,6 +12,7 @@ import Verify from "../pages/Verify";
 import Variants from "../pages/Variants";
 import BatchRegistration from "../pages/BatchRegistration";
 import Settings from "../pages/Settings";
+import NotFound from "../pages/NotFound";
 
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -72,6 +73,10 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+  path="*"
+  element={<NotFound />}
+/>
       </Routes>
     </BrowserRouter>
   );
