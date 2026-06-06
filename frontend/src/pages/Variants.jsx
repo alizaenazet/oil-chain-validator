@@ -5,18 +5,46 @@ function Variants() {
   const [brand, setBrand] = useState("");
   const [oilType, setOilType] = useState("");
 
+  const [variants, setVariants] = useState([
+    {
+      id: 1,
+      brand: "Shell",
+      oilType: "5W-30",
+    },
+    {
+      id: 2,
+      brand: "Pertamina",
+      oilType: "10W-40",
+    },
+  ]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    console.log({
+    const newVariant = {
+      id: Date.now(),
       brand,
       oilType,
-    });
+    };
+
+    setVariants([...variants, newVariant]);
+
+    setBrand("");
+    setOilType("");
+  };
+
+  const handleDelete = (id) => {
+    setVariants(
+      variants.filter(
+        (variant) => variant.id !== id
+      )
+    );
   };
 
   return (
     <div>
-        <Navbar />
+      <Navbar />
+
       <h1>Variants</h1>
 
       <form onSubmit={handleSubmit}>
@@ -48,6 +76,42 @@ function Variants() {
           Add Variant
         </button>
       </form>
+
+      <hr />
+
+      <h2>Variant List</h2>
+
+      <table border="1" cellPadding="10">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Brand</th>
+            <th>Oil Type</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {variants.map((variant) => (
+            <tr key={variant.id}>
+              <td>{variant.id}</td>
+              <td>{variant.brand}</td>
+              <td>{variant.oilType}</td>
+              <td>
+                <button
+                  onClick={() =>
+                    handleDelete(
+                      variant.id
+                    )
+                  }
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
