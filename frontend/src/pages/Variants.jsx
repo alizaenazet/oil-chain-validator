@@ -70,15 +70,20 @@ function Variants() {
     );
   };
 
-  const filteredVariants =
-    variants.filter((variant) =>
+const filteredVariants =
+  variants.filter(
+    (variant) =>
       variant.brand
         .toLowerCase()
         .includes(
           searchTerm.toLowerCase()
+        ) ||
+      variant.oilType
+        .toLowerCase()
+        .includes(
+          searchTerm.toLowerCase()
         )
-    );
-
+  );
   return (
     <AdminLayout>
       <div style={{ padding: "20px" }}>
