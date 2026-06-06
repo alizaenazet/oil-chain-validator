@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 
 function BatchRegistration() {
@@ -10,10 +10,30 @@ function BatchRegistration() {
 
   const [registeredBatches,
     setRegisteredBatches] =
-    useState([]);
+    useState(() => {
+      const savedBatches =
+        localStorage.getItem(
+          "registeredBatches"
+        );
+
+      return savedBatches
+        ? JSON.parse(savedBatches)
+        : [];
+    });
+
+  useEffect(() => {
+    localStorage.setItem(
+      "registeredBatches",
+      JSON.stringify(
+        registeredBatches
+      )
+    );
+  }, [registeredBatches]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!variantId || !serials) return;
 
     const serialList =
       serials
@@ -98,34 +118,65 @@ SN003`}
 
       <h2>Registered Batches</h2>
 
-      {registeredBatches.map(
-        (batch) => (
-          <div
-            key={batch.id}
-            style={{
-              border:
-                "1px solid #ccc",
-              padding: "10px",
-              marginBottom: "10px",
-            }}
-          >
-            <p>
-              Batch ID:
-              {batch.id}
-            </p>
+      {registeredBatches.length === 0 ? (
+        <p>No batches registered yet.</p>
+      ) : (
+        registeredBatches.map(
+          (batch) => (
+            <div
+              key={batch.id}
+              style={{
+                border:
+                  "1px solid #ccc",
+                padding: "10px",
+                marginBottom: "10px",
+              }}
+            >
+              <p>
+                <strong>
+                  Batch ID:
+                </strong>{" "}
+                {batch.id}
+              </p>
 
-            <p>
-              Variant ID:
-              {batch.variantId}
-            </p>
+              <p>
+                <strong>
+                  Variant ID:
+                </strong>{" "}
+                {batch.variantId}
+              </p>
 
-            <p>
-              Total Products:
-              {
-                batch.totalProducts
-              }
-            </p>
-          </div>
+              <p>
+                <strong>
+                  Total Products:
+                </strong>{" "}
+                {
+                  batch.totalProducts
+                }
+              </p>
+
+              <details>
+                <summary>
+                  View Serial Numbers
+                </summary>
+
+                <ul>
+                  {batch.serials.map(
+                    (
+                      serial,
+                      index
+                    ) => (
+                      <li
+                        key={index}
+                      >
+                        {serial}
+                      </li>
+                    )
+                  )}
+                </ul>
+              </details>
+            </div>
+          )
         )
       )}
     </div>

@@ -1,17 +1,38 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 
 function Settings() {
   const [walletAddress, setWalletAddress] =
     useState("");
 
-  const [revokedSerials, setRevokedSerials] =
-    useState([]);
-
   const [serialNumber, setSerialNumber] =
     useState("");
 
+  const [revokedSerials,
+    setRevokedSerials] =
+    useState(() => {
+      const saved =
+        localStorage.getItem(
+          "revokedSerials"
+        );
+
+      return saved
+        ? JSON.parse(saved)
+        : [];
+    });
+
+  useEffect(() => {
+    localStorage.setItem(
+      "revokedSerials",
+      JSON.stringify(
+        revokedSerials
+      )
+    );
+  }, [revokedSerials]);
+
   const handleTransferOwnership = () => {
+    if (!walletAddress) return;
+
     alert(
       `Ownership transferred to ${walletAddress}`
     );
@@ -28,6 +49,14 @@ function Settings() {
     ]);
 
     setSerialNumber("");
+  };
+
+  const handleDelete = (index) => {
+    setRevokedSerials(
+      revokedSerials.filter(
+        (_, i) => i !== index
+      )
+    );
   };
 
   return (
@@ -78,15 +107,34 @@ function Settings() {
 
       <h3>Revoked Products</h3>
 
-      <ul>
-        {revokedSerials.map(
-          (serial, index) => (
-            <li key={index}>
-              {serial}
-            </li>
-          )
-        )}
-      </ul>
+      {revokedSerials.length === 0 ? (
+        <p>
+          No revoked products yet.
+        </p>
+      ) : (
+        <ul>
+          {revokedSerials.map(
+            (serial, index) => (
+              <li key={index}>
+                {serial}
+
+                <button
+                  style={{
+                    marginLeft: "10px",
+                  }}
+                  onClick={() =>
+                    handleDelete(
+                      index
+                    )
+                  }
+                >
+                  Remove
+                </button>
+              </li>
+            )
+          )}
+        </ul>
+      )}
     </div>
   );
 }

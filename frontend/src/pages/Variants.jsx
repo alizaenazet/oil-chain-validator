@@ -1,25 +1,41 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 
 function Variants() {
   const [brand, setBrand] = useState("");
   const [oilType, setOilType] = useState("");
 
-  const [variants, setVariants] = useState([
-    {
-      id: 1,
-      brand: "Shell",
-      oilType: "5W-30",
-    },
-    {
-      id: 2,
-      brand: "Pertamina",
-      oilType: "10W-40",
-    },
-  ]);
+  const [variants, setVariants] = useState(() => {
+    const savedVariants =
+      localStorage.getItem("variants");
+
+    return savedVariants
+      ? JSON.parse(savedVariants)
+      : [
+          {
+            id: 1,
+            brand: "Shell",
+            oilType: "5W-30",
+          },
+          {
+            id: 2,
+            brand: "Pertamina",
+            oilType: "10W-40",
+          },
+        ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem(
+      "variants",
+      JSON.stringify(variants)
+    );
+  }, [variants]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!brand || !oilType) return;
 
     const newVariant = {
       id: Date.now(),
@@ -27,7 +43,10 @@ function Variants() {
       oilType,
     };
 
-    setVariants([...variants, newVariant]);
+    setVariants([
+      ...variants,
+      newVariant,
+    ]);
 
     setBrand("");
     setOilType("");
