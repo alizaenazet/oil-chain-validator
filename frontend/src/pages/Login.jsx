@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { login } from "../services/authService";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
   const [username, setUsername] =
@@ -8,25 +8,26 @@ function Login() {
   const [password, setPassword] =
     useState("");
 
+  const navigate = useNavigate();
+
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    try {
-      const data = await login(
-        username,
-        password
+    if (!username || !password) {
+      alert(
+        "Username dan Password wajib diisi"
       );
-
-      localStorage.setItem(
-        "token",
-        data.token
-      );
-
-      alert("Login berhasil");
-    } catch (error) {
-      alert("Login gagal");
-      console.error(error);
+      return;
     }
+
+    localStorage.setItem(
+      "token",
+      "mock-jwt-token"
+    );
+
+    alert("Login berhasil");
+
+    navigate("/dashboard");
   };
 
   return (
