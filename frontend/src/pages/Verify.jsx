@@ -15,6 +15,51 @@ function Verify() {
   const [loading, setLoading] =
     useState(true);
 
+  const getStatusConfig = (
+    status
+  ) => {
+    switch (status) {
+      case "VALID":
+        return {
+          title:
+            "✓ ORIGINAL PRODUCT",
+          bg: "#ecfdf5",
+          border:
+            "1px solid #86efac",
+          color: "#15803d",
+        };
+
+      case "USED":
+        return {
+          title:
+            "⚠ PRODUCT ALREADY SCANNED",
+          bg: "#fef9c3",
+          border:
+            "1px solid #fde047",
+          color: "#a16207",
+        };
+
+      case "REVOKED":
+        return {
+          title:
+            "✖ REVOKED PRODUCT",
+          bg: "#fee2e2",
+          border:
+            "1px solid #fca5a5",
+          color: "#b91c1c",
+        };
+
+      default:
+        return {
+          title: "UNKNOWN",
+          bg: "#f8fafc",
+          border:
+            "1px solid #cbd5e1",
+          color: "#334155",
+        };
+    }
+  };
+
   useEffect(() => {
     const cached =
       sessionStorage.getItem(
@@ -22,11 +67,19 @@ function Verify() {
       );
 
     if (cached) {
+      const parsedData =
+        JSON.parse(cached);
+
       setVerificationResult(
-        JSON.parse(cached)
+        parsedData
+      );
+
+      setLocation(
+        parsedData.location
       );
 
       setLoading(false);
+
       return;
     }
 
@@ -49,9 +102,7 @@ function Verify() {
           currentLocation
         );
       },
-      (error) => {
-        console.error(error);
-
+      () => {
         const deniedLocation =
           "Location permission denied";
 
@@ -70,9 +121,23 @@ function Verify() {
     scanLocation
   ) => {
     setTimeout(() => {
+      const statuses = [
+        "VALID",
+        "USED",
+        "REVOKED",
+      ];
+
+      const randomStatus =
+        statuses[
+          Math.floor(
+            Math.random() *
+              statuses.length
+          )
+        ];
+
       const data = {
         serialNumber,
-        status: "VALID",
+        status: randomStatus,
         productName:
           "Shell Helix Ultra",
         oilType: "5W-30",
@@ -91,6 +156,49 @@ function Verify() {
       setLoading(false);
     }, 1500);
   };
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent:
+            "center",
+          alignItems: "center",
+          background:
+            "#f8fafc",
+        }}
+      >
+        <div
+          style={{
+            background: "white",
+            padding: "30px",
+            borderRadius:
+              "16px",
+            boxShadow:
+              "0 10px 25px rgba(0,0,0,0.08)",
+            textAlign: "center",
+          }}
+        >
+          <h2>
+            Validating Product...
+          </h2>
+
+          <p>
+            Retrieving location
+            and verifying
+            authenticity.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const statusConfig =
+    getStatusConfig(
+      verificationResult?.status
+    );
 
   return (
     <div
@@ -154,107 +262,81 @@ function Verify() {
           </p>
         </div>
 
-        {loading && (
-          <div
+        <div
+          style={{
+            background:
+              statusConfig.bg,
+            border:
+              statusConfig.border,
+            borderRadius:
+              "12px",
+            padding: "20px",
+          }}
+        >
+          <h2
             style={{
-              background: "#eff6ff",
-              border:
-                "1px solid #93c5fd",
-              borderRadius: "12px",
-              padding: "20px",
-              textAlign: "center",
+              color:
+                statusConfig.color,
+              marginTop: 0,
             }}
           >
-            <h3>
-              Validating Product...
-            </h3>
+            {statusConfig.title}
+          </h2>
 
-            <p>
-              Retrieving location and
-              verifying authenticity.
-            </p>
-          </div>
-        )}
+          <p>
+            <strong>
+              Serial Number:
+            </strong>{" "}
+            {
+              verificationResult.serialNumber
+            }
+          </p>
 
-        {!loading &&
-          verificationResult && (
-            <div
-              style={{
-                marginTop: "25px",
-                background:
-                  "#ecfdf5",
-                border:
-                  "1px solid #86efac",
-                borderRadius:
-                  "12px",
-                padding: "20px",
-              }}
-            >
-              <h2
-                style={{
-                  color:
-                    "#15803d",
-                  marginTop: 0,
-                }}
-              >
-                ✓ Verification Success
-              </h2>
+          <p>
+            <strong>
+              Product:
+            </strong>{" "}
+            {
+              verificationResult.productName
+            }
+          </p>
 
-              <p>
-                <strong>
-                  Serial Number:
-                </strong>{" "}
-                {
-                  verificationResult.serialNumber
-                }
-              </p>
+          <p>
+            <strong>
+              Oil Type:
+            </strong>{" "}
+            {
+              verificationResult.oilType
+            }
+          </p>
 
-              <p>
-                <strong>
-                  Product:
-                </strong>{" "}
-                {
-                  verificationResult.productName
-                }
-              </p>
+          <p>
+            <strong>
+              Status:
+            </strong>{" "}
+            {
+              verificationResult.status
+            }
+          </p>
 
-              <p>
-                <strong>
-                  Oil Type:
-                </strong>{" "}
-                {
-                  verificationResult.oilType
-                }
-              </p>
+          <p>
+            <strong>
+              Verified At:
+            </strong>{" "}
+            {
+              verificationResult.verifiedAt
+            }
+          </p>
 
-              <p>
-                <strong>
-                  Status:
-                </strong>{" "}
-                {
-                  verificationResult.status
-                }
-              </p>
-
-              <p>
-                <strong>
-                  Verified At:
-                </strong>{" "}
-                {
-                  verificationResult.verifiedAt
-                }
-              </p>
-
-              <p>
-                <strong>
-                  Scan Location:
-                </strong>{" "}
-                {
-                  verificationResult.location
-                }
-              </p>
-            </div>
-          )}
+          <p>
+            <strong>
+              Scan Location:
+            </strong>{" "}
+            {
+              verificationResult.location
+            }
+          </p>
+        </div>
       </div>
     </div>
   );
