@@ -71,14 +71,32 @@ function Verify() {
     JSON.parse(cached);
 
   const updatedData = {
-    ...parsedData,
-    firstScanTime:
-      parsedData.firstScanTime ||
-      "01/06/2026 09:15:22",
-    firstScanLocation:
-      parsedData.firstScanLocation ||
-      "Surabaya, Indonesia",
-  };
+  ...parsedData,
+
+  brand:
+    parsedData.brand ||
+    "Shell",
+
+  variantId:
+    parsedData.variantId ||
+    "VAR-001",
+
+  batchId:
+    parsedData.batchId ||
+    "BATCH-2026-001",
+
+  manufacturer:
+    parsedData.manufacturer ||
+    "Shell Indonesia",
+
+  firstScanTime:
+    parsedData.firstScanTime ||
+    "01/06/2026 09:15:22",
+
+  firstScanLocation:
+    parsedData.firstScanLocation ||
+    "Surabaya, Indonesia",
+};
 
   setVerificationResult(
     updatedData
@@ -127,29 +145,34 @@ function Verify() {
     );
   }, []);
 
-  const simulateValidation = (
-    scanLocation
-  ) => {
-    setTimeout(() => {
-      const statuses = [
-        "VALID",
-        "USED",
-        "REVOKED",
-      ];
+// Simulated Backend Relayer API Call
+const simulateValidation = async (
+  scanLocation
+) => {
+  setLoading(true);
 
-      const randomStatus =
-        statuses[
-          Math.floor(
-            Math.random() *
-              statuses.length
-          )
-        ];
-
-      const data = {
+  setTimeout(() => {
+  const mockApiResponse = {
   serialNumber,
-  status: randomStatus,
-  productName: "Shell Helix Ultra",
-  oilType: "5W-30",
+
+  status: "VALID",
+
+  brand: "Shell",
+
+  productName:
+    "Helix Ultra",
+
+  oilType:
+    "5W-30",
+
+  variantId:
+    "VAR-001",
+
+  batchId:
+    "BATCH-2026-001",
+
+  manufacturer:
+    "Shell Indonesia",
 
   verifiedAt:
     new Date().toLocaleString(),
@@ -163,17 +186,20 @@ function Verify() {
   firstScanLocation:
     "Surabaya, Indonesia",
 };
+    sessionStorage.setItem(
+      "verificationResult",
+      JSON.stringify(
+        mockApiResponse
+      )
+    );
 
-      sessionStorage.setItem(
-        "verificationResult",
-        JSON.stringify(data)
-      );
+    setVerificationResult(
+      mockApiResponse
+    );
 
-      setVerificationResult(data);
-
-      setLoading(false);
-    }, 1500);
-  };
+    setLoading(false);
+  }, 1500);
+};
 
   if (loading) {
     return (
@@ -354,6 +380,66 @@ function Verify() {
               verificationResult.location
             }
           </p>
+          <hr
+  style={{
+    margin: "20px 0",
+    border:
+      "1px solid #e2e8f0",
+  }}
+/>
+
+<h3
+  style={{
+    color: "#1e293b",
+  }}
+>
+  Product Information
+</h3>
+
+<p>
+  <strong>
+    Brand:
+  </strong>{" "}
+  {
+    verificationResult.brand
+  }
+</p>
+
+<p>
+  <strong>
+    Variant:
+  </strong>{" "}
+  {
+    verificationResult.productName
+  }
+</p>
+
+<p>
+  <strong>
+    Variant ID:
+  </strong>{" "}
+  {
+    verificationResult.variantId
+  }
+</p>
+
+<p>
+  <strong>
+    Batch ID:
+  </strong>{" "}
+  {
+    verificationResult.batchId
+  }
+</p>
+
+<p>
+  <strong>
+    Manufacturer:
+  </strong>{" "}
+  {
+    verificationResult.manufacturer
+  }
+</p>
           <hr
   style={{
     margin: "20px 0",
