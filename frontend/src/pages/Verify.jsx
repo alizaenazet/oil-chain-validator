@@ -12,26 +12,8 @@ function Verify() {
     setVerificationResult,
   ] = useState(null);
 
-  useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat =
-          position.coords.latitude;
-
-        const lng =
-          position.coords.longitude;
-
-        setLocation(`${lat}, ${lng}`);
-      },
-      (error) => {
-        console.error(error);
-
-        setLocation(
-          "Location permission denied"
-        );
-      }
-    );
-  }, []);
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
     const cached =
@@ -43,27 +25,71 @@ function Verify() {
       setVerificationResult(
         JSON.parse(cached)
       );
+
+      setLoading(false);
+      return;
     }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat =
+          position.coords.latitude;
+
+        const lng =
+          position.coords.longitude;
+
+        const currentLocation =
+          `${lat}, ${lng}`;
+
+        setLocation(
+          currentLocation
+        );
+
+        simulateValidation(
+          currentLocation
+        );
+      },
+      (error) => {
+        console.error(error);
+
+        const deniedLocation =
+          "Location permission denied";
+
+        setLocation(
+          deniedLocation
+        );
+
+        simulateValidation(
+          deniedLocation
+        );
+      }
+    );
   }, []);
 
-  const simulateValidation = () => {
-    const data = {
-      serialNumber,
-      status: "VALID",
-      productName:
-        "Shell Helix Ultra",
-      oilType: "5W-30",
-      verifiedAt:
-        new Date().toLocaleString(),
-      location,
-    };
+  const simulateValidation = (
+    scanLocation
+  ) => {
+    setTimeout(() => {
+      const data = {
+        serialNumber,
+        status: "VALID",
+        productName:
+          "Shell Helix Ultra",
+        oilType: "5W-30",
+        verifiedAt:
+          new Date().toLocaleString(),
+        location: scanLocation,
+      };
 
-    sessionStorage.setItem(
-      "verificationResult",
-      JSON.stringify(data)
-    );
+      sessionStorage.setItem(
+        "verificationResult",
+        JSON.stringify(data)
+      );
 
-    setVerificationResult(data);
+      setVerificationResult(data);
+
+      setLoading(false);
+    }, 1500);
   };
 
   return (
@@ -128,96 +154,107 @@ function Verify() {
           </p>
         </div>
 
-        <button
-          onClick={simulateValidation}
-          style={{
-            background: "#2563eb",
-            color: "white",
-            border: "none",
-            padding: "12px 20px",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontWeight: "bold",
-          }}
-        >
-          Verify Product
-        </button>
-
-        {verificationResult && (
+        {loading && (
           <div
             style={{
-              marginTop: "25px",
-              background: "#ecfdf5",
+              background: "#eff6ff",
               border:
-                "1px solid #86efac",
+                "1px solid #93c5fd",
               borderRadius: "12px",
               padding: "20px",
+              textAlign: "center",
             }}
           >
-            <h2
-              style={{
-                color: "#15803d",
-                marginTop: 0,
-              }}
-            >
-              ✓ Verification Success
-            </h2>
+            <h3>
+              Validating Product...
+            </h3>
 
             <p>
-              <strong>
-                Serial Number:
-              </strong>{" "}
-              {
-                verificationResult.serialNumber
-              }
-            </p>
-
-            <p>
-              <strong>
-                Product:
-              </strong>{" "}
-              {
-                verificationResult.productName
-              }
-            </p>
-
-            <p>
-              <strong>
-                Oil Type:
-              </strong>{" "}
-              {
-                verificationResult.oilType
-              }
-            </p>
-
-            <p>
-              <strong>
-                Status:
-              </strong>{" "}
-              {
-                verificationResult.status
-              }
-            </p>
-
-            <p>
-              <strong>
-                Verified At:
-              </strong>{" "}
-              {
-                verificationResult.verifiedAt
-              }
-            </p>
-
-            <p>
-              <strong>
-                Scan Location:
-              </strong>{" "}
-              {
-                verificationResult.location
-              }
+              Retrieving location and
+              verifying authenticity.
             </p>
           </div>
         )}
+
+        {!loading &&
+          verificationResult && (
+            <div
+              style={{
+                marginTop: "25px",
+                background:
+                  "#ecfdf5",
+                border:
+                  "1px solid #86efac",
+                borderRadius:
+                  "12px",
+                padding: "20px",
+              }}
+            >
+              <h2
+                style={{
+                  color:
+                    "#15803d",
+                  marginTop: 0,
+                }}
+              >
+                ✓ Verification Success
+              </h2>
+
+              <p>
+                <strong>
+                  Serial Number:
+                </strong>{" "}
+                {
+                  verificationResult.serialNumber
+                }
+              </p>
+
+              <p>
+                <strong>
+                  Product:
+                </strong>{" "}
+                {
+                  verificationResult.productName
+                }
+              </p>
+
+              <p>
+                <strong>
+                  Oil Type:
+                </strong>{" "}
+                {
+                  verificationResult.oilType
+                }
+              </p>
+
+              <p>
+                <strong>
+                  Status:
+                </strong>{" "}
+                {
+                  verificationResult.status
+                }
+              </p>
+
+              <p>
+                <strong>
+                  Verified At:
+                </strong>{" "}
+                {
+                  verificationResult.verifiedAt
+                }
+              </p>
+
+              <p>
+                <strong>
+                  Scan Location:
+                </strong>{" "}
+                {
+                  verificationResult.location
+                }
+              </p>
+            </div>
+          )}
       </div>
     </div>
   );
