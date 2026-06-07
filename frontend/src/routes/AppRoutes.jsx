@@ -14,6 +14,7 @@ import BatchRegistration from "../pages/BatchRegistration";
 import Settings from "../pages/Settings";
 import NotFound from "../pages/NotFound";
 import QRScanner from "../pages/QRScanner";
+import QRGenerator from "../pages/QRGenerator";
 
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -69,6 +70,14 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+  path="/qr-generator"
+  element={
+    <ProtectedRoute>
+      <QRGenerator />
+    </ProtectedRoute>
+  }
+/>
 
         <Route
           path="/settings"
