@@ -15,6 +15,7 @@ import Settings from "../pages/Settings";
 import NotFound from "../pages/NotFound";
 import QRScanner from "../pages/QRScanner";
 import QRGenerator from "../pages/QRGenerator";
+import ProductLookup from "../pages/ProductLookup";
 
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -38,10 +39,11 @@ function AppRoutes() {
           path="/verify/:serialNumber"
           element={<Verify />}
         />
+
         <Route
-  path="/scanner"
-  element={<QRScanner />}
-/>
+          path="/scanner"
+          element={<QRScanner />}
+        />
 
         {/* Protected Routes */}
         <Route
@@ -70,14 +72,24 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+
         <Route
-  path="/qr-generator"
-  element={
-    <ProtectedRoute>
-      <QRGenerator />
-    </ProtectedRoute>
-  }
-/>
+          path="/qr-generator"
+          element={
+            <ProtectedRoute>
+              <QRGenerator />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/product-lookup"
+          element={
+            <ProtectedRoute>
+              <ProductLookup />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/settings"
@@ -87,10 +99,11 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+
         <Route
-  path="*"
-  element={<NotFound />}
-/>
+          path="*"
+          element={<NotFound />}
+        />
       </Routes>
     </BrowserRouter>
   );
