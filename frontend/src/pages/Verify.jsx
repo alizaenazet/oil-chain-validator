@@ -67,21 +67,31 @@ function Verify() {
       );
 
     if (cached) {
-      const parsedData =
-        JSON.parse(cached);
+  const parsedData =
+    JSON.parse(cached);
 
-      setVerificationResult(
-        parsedData
-      );
+  const updatedData = {
+    ...parsedData,
+    firstScanTime:
+      parsedData.firstScanTime ||
+      "01/06/2026 09:15:22",
+    firstScanLocation:
+      parsedData.firstScanLocation ||
+      "Surabaya, Indonesia",
+  };
 
-      setLocation(
-        parsedData.location
-      );
+  setVerificationResult(
+    updatedData
+  );
 
-      setLoading(false);
+  setLocation(
+    updatedData.location
+  );
 
-      return;
-    }
+  setLoading(false);
+
+  return;
+}
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -136,15 +146,23 @@ function Verify() {
         ];
 
       const data = {
-        serialNumber,
-        status: randomStatus,
-        productName:
-          "Shell Helix Ultra",
-        oilType: "5W-30",
-        verifiedAt:
-          new Date().toLocaleString(),
-        location: scanLocation,
-      };
+  serialNumber,
+  status: randomStatus,
+  productName: "Shell Helix Ultra",
+  oilType: "5W-30",
+
+  verifiedAt:
+    new Date().toLocaleString(),
+
+  location:
+    scanLocation,
+
+  firstScanTime:
+    "01/06/2026 09:15:22",
+
+  firstScanLocation:
+    "Surabaya, Indonesia",
+};
 
       sessionStorage.setItem(
         "verificationResult",
@@ -336,6 +354,41 @@ function Verify() {
               verificationResult.location
             }
           </p>
+          <hr
+  style={{
+    margin: "20px 0",
+    border:
+      "1px solid #e2e8f0",
+  }}
+/>
+
+<h3
+  style={{
+    color: "#1e293b",
+  }}
+>
+  First Scan History
+</h3>
+
+<p>
+  <strong>
+    First Scan Time:
+  </strong>{" "}
+  {
+    verificationResult.firstScanTime ||
+    "01/06/2026 09:15:22"
+  }
+</p>
+
+<p>
+  <strong>
+    First Scan Location:
+  </strong>{" "}
+  {
+    verificationResult.firstScanLocation ||
+    "Surabaya, Indonesia"
+  }
+</p>
         </div>
       </div>
     </div>
