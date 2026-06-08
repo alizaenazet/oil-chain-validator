@@ -10,7 +10,7 @@ http:
     - name: Content-Type
       value: application/json
     - name: Authorization
-      value: "Bearer {{token}}"
+      value: Bearer {{token}}
   body:
     type: json
     data: |-
@@ -22,9 +22,13 @@ http:
           "OIL-PERT-2024-000003"
         ]
       }
-  auth: none
 
 runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:3000
+    - name: token
+      value: test-admin-token
   assertions:
     - expression: res.status
       operator: eq
@@ -39,6 +43,7 @@ settings:
   encodeUrl: true
   timeout: 120000
   followRedirects: false
+  maxRedirects: 5
 
 docs: |-
   # POST /admin/batches
