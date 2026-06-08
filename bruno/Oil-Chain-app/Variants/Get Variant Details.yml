@@ -11,7 +11,7 @@ http:
       value: application/json
   params:
     - name: variantId
-      value: "2"
+      value: "7"
       type: path
 
 runtime:

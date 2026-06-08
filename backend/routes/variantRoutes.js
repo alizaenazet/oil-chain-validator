@@ -1,59 +1,55 @@
 // routes/variantRoutes.js
 const express = require('express');
+const { ethers } = require('ethers');
 const router = express.Router();
-const redisClient = require('../config/redis');
 
-// DATABASE DUMMY DI MEMORI (Pengganti Blockchain Mapping)
-const dummyVariants = {
-    1: { brand: "Pertamina", oilType: "SAE 10W-40" },
-    2: { brand: "Shell", oilType: "Helix HX7 10W-40" },
-    3: { brand: "Federal Oil", oilType: "Ultratec 20W-50" }
-};
+const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+// ABI untuk memanggil fungsi getter otomatis dari mapping public 'variants'
+const contractABI = [
+    "function variants(uint32) external view returns (string memory brand, string memory oilType)"
+];
+const oilValidatorContract = new ethers.Contract(process.env.CONTRACT_ADDRESS, contractABI, provider);
 
-const CACHE_PREFIX = "cache:variant:";
-const CACHE_TTL = 300;
-
-// ─── GET /variants/:variantId ────────────────────────────────────────────────
+// ─── GET /variants/:variantId (REAL BLOCKCHAIN READ) ─────────────────────────
 router.get('/:variantId', async (req, res) => {
     try {
         const { variantId } = req.params;
-        if (!variantId || isNaN(variantId) || Number(variantId) <= 0) {
-            return res.status(400).json({ success: false, error: { code: "VALIDATION_ERROR", message: "ID harus angka." } });
-        }
-
-        const targetVariantId = Number(variantId);
-        const cacheKey = `${CACHE_PREFIX}${targetVariantId}`;
-
-        // 1. Cek Redis Cache
-        let cachedData = await redisClient.get(cacheKey);
-        if (cachedData) {
-            console.log(`[Variant API - DUMMY] 🟢 Cache HIT!`);
-            return res.status(200).json({ success: true, data: JSON.parse(cachedData).data, meta: { cachedAt: JSON.parse(cachedData).cachedAt, cacheSource: "redis" } });
-        }
-
-        console.log(`[Variant API - DUMMY] 🔴 Cache MISS! Membaca dari data Dummy...`);
         
-        // 2. Ambil dari database dummy lokal
-        const variantData = dummyVariants[targetVariantId];
-        if (!variantData) {
-            return res.status(404).json({ success: false, error: { code: "VARIANT_NOT_FOUND", message: "Variant ID tidak ada." } });
+        if (!variantId || isNaN(variantId) || Number(variantId) <= 0) {
+            return res.status(400).json({
+                success: false,
+                error: { code: "VALIDATION_ERROR", message: "Variant ID harus berupa angka positif." }
+            });
         }
 
-        const currentTimestamp = new Date().toISOString();
-        const responseData = {
-            variantId: targetVariantId,
-            brand: variantData.brand,
-            oilType: variantData.oilType,
-            createdAt: currentTimestamp,
-            totalRegistered: 150
-        };
+        console.log(`[Blockchain RPC] Mengambil data master Variant ID: ${variantId}`);
+        
+        // Memanggil mapping public variants(uint32) langsung dari contract temanmu
+        const variantData = await oilValidatorContract.variants(Number(variantId));
 
-        // 3. Simpan ke Redis
-        await redisClient.setEx(cacheKey, CACHE_TTL, JSON.stringify({ data: responseData, cachedAt: currentTimestamp }));
+        // Jika brand kosong, berarti variantId tersebut belum terdaftar on-chain
+        if (!variantData.brand || variantData.brand.trim() === "") {
+            return res.status(404).json({
+                success: false,
+                error: { code: "VARIANT_NOT_FOUND", message: `Master Variant dengan ID ${variantId} tidak ditemukan.` }
+            });
+        }
 
-        return res.status(200).json({ success: true, data: responseData, meta: { cachedAt: currentTimestamp, cacheSource: "dummy_blockchain" } });
+        return res.status(200).json({
+            success: true,
+            data: {
+                variantId: Number(variantId),
+                brand: variantData.brand,
+                oilType: variantData.oilType
+            }
+        });
+
     } catch (error) {
-        return res.status(500).json({ success: false, error: { code: "DUMMY_ERROR", message: error.message } });
+        console.error("❌ Fetch Variant Blockchain Error:", error);
+        return res.status(500).json({
+            success: false,
+            error: { code: "RPC_FETCH_FAILED", message: error.message }
+        });
     }
 });
 

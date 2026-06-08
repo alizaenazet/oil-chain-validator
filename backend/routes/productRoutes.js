@@ -4,16 +4,14 @@ const { ethers } = require('ethers');
 const router = express.Router();
 
 const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
-const wallet = new ethers.Wallet(process.env.ADMIN_PRIVATE_KEY, provider);
-
 const contractABI = [
-    "function getProductDetails(bytes32 productHash) external view returns (uint32 variantId, uint64 registeredAt, uint64 validatedAt, uint8 status, string memory scanLocation, string memory brand, string memory oilType)"
+    "function getProductDetails(bytes32 productId) external view returns (uint32 variantId, uint64 registeredAt, uint64 validatedAt, uint8 status, string memory scanLocation, string memory brand, string memory oilType)"
 ];
+const oilValidatorContract = new ethers.Contract(process.env.CONTRACT_ADDRESS, contractABI, provider);
 
-const oilValidatorContract = new ethers.Contract(process.env.CONTRACT_ADDRESS, contractABI, wallet);
 const STATUS_MAP = ["UNREGISTERED", "NEW", "USED", "REVOKED"];
 
-// ─── GET /products/:serialNumber (AMBIL DETAIL PRODUK - FIX HASHING) ───
+// ─── GET /products/:serialNumber (REAL BLOCKCHAIN READ) ──────────────────────
 router.get('/:serialNumber', async (req, res) => {
     try {
         const { serialNumber } = req.params;
@@ -27,82 +25,44 @@ router.get('/:serialNumber', async (req, res) => {
 
         const cleanSerialNumber = String(serialNumber).trim();
         
-        // FIX: Gunakan Keccak256 persis seperti di adminRoutes agar ID produknya SINKRON!
-        const mockProductId = ethers.solidityPackedKeccak256(["string"], [cleanSerialNumber]);
+        // Hitung Keccak256 hash untuk mencocokkan bytes32 key di mapping contract
+        const productIdHash = ethers.solidityPackedKeccak256(["string"], [cleanSerialNumber]);
 
-        let product = null;
-
-        // 1. Cek di memori dinamis global (/admin/batches)
-        if (global.dummyRegisteredProducts && global.dummyRegisteredProducts[mockProductId]) {
-            const dynamicProd = global.dummyRegisteredProducts[mockProductId];
-            
-            const vId = dynamicProd.variantId;
-            const variantInfo = global.dummyVariants && global.dummyVariants[vId] 
-                ? global.dummyVariants[vId] 
-                : { brand: "Pertamina", oilType: "SAE 10W-40" };
-
-            product = {
-                productId: mockProductId,
-                serialNumber: cleanSerialNumber,
-                variantId: vId,
-                brand: variantInfo.brand,
-                oilType: variantInfo.oilType,
-                status: dynamicProd.status,
-                registeredAt: dynamicProd.registeredAt
-            };
-        } 
-        // 2. Fallback baseline static dummy
-        else if (cleanSerialNumber === "OIL-PERT-NEW") {
-            product = {
-                productId: mockProductId,
-                serialNumber: "OIL-PERT-NEW",
-                variantId: 1,
-                brand: "Pertamina",
-                oilType: "SAE 10W-40",
-                status: "NEW",
-                registeredAt: "2024-07-01T00:00:00.000Z"
-            };
-        } else if (cleanSerialNumber === "OIL-SHELL-REVOKED") {
-            product = {
-                productId: mockProductId,
-                serialNumber: "OIL-SHELL-REVOKED",
-                variantId: 2,
-                brand: "Shell",
-                oilType: "Helix HX7 10W-40",
-                status: "REVOKED",
-                registeredAt: "2024-07-01T00:00:00.000Z"
-            };
-        }
-
-        if (!product) {
+        console.log(`[Blockchain RPC] Membaca detail on-chain untuk produk: ${cleanSerialNumber}`);
+        const details = await oilValidatorContract.getProductDetails(productIdHash);
+        
+        const statusEnum = Number(details[3]);
+        
+        // Status 0 artinya UNREGISTERED (Produk Palsu / Tidak Terdaftar)
+        if (statusEnum === 0) {
             return res.status(404).json({
                 success: false,
-                error: {
-                    code: "PRODUCT_NOT_FOUND",
-                    message: `Product dengan nomor seri ${cleanSerialNumber} tidak terdaftar di sistem.`
-                }
+                error: { code: "PRODUCT_NOT_FOUND", message: "Nomor seri produk tidak terdaftar di blockchain pabrik." }
             });
         }
 
         return res.status(200).json({
             success: true,
             data: {
-                productId: product.productId,
-                serialNumber: product.serialNumber,
-                status: product.status,
-                registeredAt: product.registeredAt,
+                productId: productIdHash,
+                serialNumber: cleanSerialNumber,
+                registeredAt: Number(details[1]) === 0 ? null : new Date(Number(details[1]) * 1000).toISOString(),
+                validatedAt: Number(details[2]) === 0 ? null : new Date(Number(details[2]) * 1000).toISOString(),
+                status: STATUS_MAP[statusEnum],
+                scanLocation: details[4] || null,
                 variant: {
-                    variantId: product.variantId,
-                    brand: product.brand,
-                    oilType: product.oilType
+                    variantId: Number(details[0]),
+                    brand: details[5],
+                    oilType: details[6]
                 }
             }
         });
 
     } catch (error) {
+        console.error("❌ Fetch Product Details Error:", error);
         return res.status(500).json({
             success: false,
-            error: { code: "DUMMY_PRODUCT_DETAIL_ERROR", message: error.message }
+            error: { code: "RPC_FETCH_FAILED", message: error.message }
         });
     }
 });

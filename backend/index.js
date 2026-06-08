@@ -6,10 +6,11 @@ require('dotenv').config(); // Membaca file .env (RPC_URL, JWT_SECRET, dll.)
 require('./config/database');
 require('./config/redis');
 
-// Tambahkan di bagian import rute di atas file index.js
+// Jalur Import Router Baru
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const variantRoutes = require('./routes/variantRoutes');
+const productRoutes = require('./routes/productRoutes'); // Import file baru kita
 const validationRoutes = require('./routes/validationRoutes');
 const statRoutes = require('./routes/statRoutes');
 
@@ -23,12 +24,13 @@ app.use(express.json());
 // Menghubungkan rute admin dengan prefix '/admin'
 // Rute seperti '/batches' atau '/emergency-revoke' diakses via /admin/batches & /admin/emergency-revoke
 // Pemasangan Middleware Endpoint Jalur Rute Express
+// Jalur Mounting Middleware Express Endpoints
 app.use('/auth', authRoutes);
-app.use('/admin', adminRoutes); // Di dalam file ini sudah terproteksi middleware JWT
+app.use('/admin', adminRoutes);
 app.use('/variants', variantRoutes);
-app.use('/validate', validationRoutes);
+app.use('/products', productRoutes); // GET /products/:serialNumber dialihkan ke sini
+app.use('/validate', validationRoutes); // POST /validate/:serialNumber tetap di sini
 app.use('/stats', statRoutes);
-app.use('/products', validationRoutes);
 
 // ─── HEALTH CHECK ROUTE ───────────────────────────────────────────
 // Jalur tes dasar untuk memastikan backend menyala dan merespons

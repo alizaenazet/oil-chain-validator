@@ -11,7 +11,7 @@ http:
       value: application/json
   params:
     - name: serialNumber
-      value: OIL-PERT-2024-000002
+      value: OIL-PERT-2024-000001
       type: path
 
 runtime:

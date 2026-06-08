@@ -3,16 +3,11 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 
-// USERNAME & PASSWORD DUMMY UNTUK LOGIN ADMIN
-const DUMMY_ADMIN_USER = "admin";
-const DUMMY_ADMIN_PASS = "admin123"; // Silakan ganti sesuai selera, Jul
-
-// ─── POST /auth/login ────────────────────────────────────────────────────────
+// ─── POST /auth/login (REAL AUTH MENGGUNAKAN ENV) ────────────────────────────
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
 
-        // 1. Validasi Input Body
         if (!username || !password) {
             return res.status(400).json({
                 success: false,
@@ -20,30 +15,24 @@ router.post('/login', async (req, res) => {
             });
         }
 
-        // 2. Cocokkan dengan Kredensial Dummy
-        if (username !== DUMMY_ADMIN_USER || password !== DUMMY_ADMIN_PASS) {
+        // Memeriksa kredensial dari file .env secara aman
+        if (username !== process.env.ADMIN_USERNAME || password !== process.env.ADMIN_PASSWORD) {
             return res.status(401).json({
                 success: false,
-                error: { code: "UNAUTHORIZED", message: "Username atau password salah" }
+                error: { code: "UNAUTHORIZED", message: "Username atau password salah!" }
             });
         }
 
-        // 3. Generate Real JWT Token jika kredensial cocok
-        const payload = {
-            username: DUMMY_ADMIN_USER,
-            role: "admin"
-        };
-
-        // Token kedaluwarsa dalam 24 jam
-        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+        // Buat Token JWT Asli
+        const token = jwt.sign(
+            { username: username, role: "admin" },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
 
         return res.status(200).json({
             success: true,
-            data: {
-                token: token,
-                type: "Bearer",
-                expiresIn: "24h"
-            }
+            data: { token: token, type: "Bearer", expiresIn: "24h" }
         });
 
     } catch (error) {
