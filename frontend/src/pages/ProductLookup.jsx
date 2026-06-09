@@ -49,7 +49,7 @@ function ProductLookup() {
 
   return (
     <AdminLayout>
-      <div style={{ padding: "20px" }}>
+      <div style={{ padding: "10px" }}>
         <h1>Product Lookup</h1>
         <p>Search on-chain product details by serial number.</p>
 

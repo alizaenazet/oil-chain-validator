@@ -51,7 +51,7 @@ function Dashboard() {
           Dashboard Overview
         </h1>
 
-        <p style={{ color: "#64748b", marginBottom: "30px" }}>
+        <p style={{ color: "#64748b", marginBottom: "30px", marginTop: "15px" }}>
           Monitor your anti-counterfeit oil verification system.
         </p>
 
