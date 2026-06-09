@@ -1,0 +1,14 @@
+{
+  "development": {
+    "dialect": "sqlite",
+    "storage": "data/oilchain.db"
+  },
+  "test": {
+    "dialect": "sqlite",
+    "storage": "data/oilchain.db"
+  },
+  "production": {
+    "dialect": "sqlite",
+    "storage": "data/oilchain.db"
+  }
+}

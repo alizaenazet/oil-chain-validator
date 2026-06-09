@@ -10,7 +10,7 @@ http:
     - name: Content-Type
       value: application/json
     - name: Authorization
-      value: "Bearer {{token}}"
+      value: Bearer {{token}}
   body:
     type: json
     data: |-
@@ -18,9 +18,13 @@ http:
         "brand": "Pertamina",
         "oilType": "SAE 10W-40"
       }
-  auth: none
 
 runtime:
+  variables:
+    - name: token
+      value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODA5OTc3MzAsImV4cCI6MTc4MTA4NDEzMH0.RwyBtmQaPKjIIjU7hEd_XUsMmdy7T7UTiL-ZX0laNWc
+    - name: baseUrl
+      value: http://localhost:3000
   assertions:
     - expression: res.status
       operator: eq
@@ -35,6 +39,7 @@ settings:
   encodeUrl: true
   timeout: 60000
   followRedirects: false
+  maxRedirects: 5
 
 docs: |-
   # POST /admin/variants

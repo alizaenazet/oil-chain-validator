@@ -2,29 +2,30 @@ opencollection: 1.0.0
 
 info:
   name: Oil-Chain-app
-  description: |-
-    # Oil-Chain Validator API
-    RESTful API for the anti-counterfeit lubricant validation system.
-    The Express.js backend acts as a Relayer between the React frontend
-    and the OilValidator.sol smart contract.
+config:
+  proxy:
+    inherit: true
+    config:
+      protocol: http
+      hostname: ""
+      port: ""
+      auth:
+        username: ""
+        password: ""
+      bypassProxy: ""
 
-    ## Auth
-    Protected endpoints require a Bearer JWT token obtained from POST /auth/login.
-    Set the `token` collection variable after a successful login.
-
-    ## Base URL
-    Use the `baseUrl` variable to switch between environments.
-
+request:
+  variables:
+    - name: token
+      value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODA5OTgyODIsImV4cCI6MTc4MTA4NDY4Mn0.mHEwracoiw0jf2ryl2u4vsqMJLF5whG2gA7WBWwrZdc
+    - name: baseUrl
+      value: http://localhost:3000
 bundled: false
-
-vars:
-  - name: baseUrl
-    value: http://localhost:3000/api/v1
-  - name: token
-    value: ""
-
 extensions:
   bruno:
     ignore:
       - node_modules
       - .git
+    presets:
+      request:
+        type: http

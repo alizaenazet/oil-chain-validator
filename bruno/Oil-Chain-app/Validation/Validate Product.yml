@@ -6,31 +6,31 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/validate/:serialNumber"
-  params:
-    - name: serialNumber
-      value: "OIL-PERT-2024-000001"
-      type: path
   headers:
     - name: Content-Type
       value: application/json
+  params:
+    - name: serialNumber
+      value: OIL-PERT-2024-000001
+      type: path
   body:
     type: json
     data: |-
       {
         "scanLocation": "Jakarta Selatan, DKI Jakarta, ID"
       }
-  auth: none
 
 runtime:
   assertions:
     - expression: res.status
       operator: in
-      value: "200,400"
+      value: 200,400
 
 settings:
   encodeUrl: true
   timeout: 60000
   followRedirects: false
+  maxRedirects: 5
 
 docs: |-
   # POST /validate/:serialNumber

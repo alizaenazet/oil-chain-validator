@@ -6,20 +6,19 @@ info:
 http:
   method: GET
   url: "{{baseUrl}}/products/:serialNumber"
-  params:
-    - name: serialNumber
-      value: "OIL-PERT-2024-000001"
-      type: path
   headers:
     - name: Accept
       value: application/json
-  auth: none
+  params:
+    - name: serialNumber
+      value: OIL-PERT-2024-000002
+      type: path
 
 runtime:
   assertions:
     - expression: res.status
       operator: in
-      value: "200,404"
+      value: 200,404
     - expression: res.body.success
       operator: eq
       value: "true"
@@ -28,6 +27,7 @@ settings:
   encodeUrl: true
   timeout: 15000
   followRedirects: false
+  maxRedirects: 5
 
 docs: |-
   # GET /products/:serialNumber
