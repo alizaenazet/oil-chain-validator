@@ -26,7 +26,7 @@ runtime:
     - name: baseUrl
       value: http://localhost:3000
     - name: token
-      value: test-admin-token
+      value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODA5OTc3MzAsImV4cCI6MTc4MTA4NDEzMH0.RwyBtmQaPKjIIjU7hEd_XUsMmdy7T7UTiL-ZX0laNWc
   assertions:
     - expression: res.status
       operator: eq

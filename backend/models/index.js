@@ -23,6 +23,11 @@ const VariantFactory = require('./variant');
 const Variant = VariantFactory(sequelize, DataTypes);
 db[Variant.name] = Variant; // Ini akan menghasilkan db.Variant
 
+// 3. Import dan register model User (UNTUK AUTENTIKASI ADMIN VIA SQLITE)
+const UserFactory = require('./user');
+const User = UserFactory(sequelize, DataTypes);
+db[User.name] = User; // Ini akan menghasilkan db.User
+
 // Menjalankan fungsi asosiasi (jika ada)
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {

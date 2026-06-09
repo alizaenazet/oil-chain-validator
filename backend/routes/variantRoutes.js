@@ -1,55 +1,28 @@
 // routes/variantRoutes.js
 const express = require('express');
-const { ethers } = require('ethers');
 const router = express.Router();
+const { publicClient, CONTRACT_ADDRESS, contractABI } = require('../config/viemClient');
 
-const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
-// ABI untuk memanggil fungsi getter otomatis dari mapping public 'variants'
-const contractABI = [
-    "function variants(uint32) external view returns (string memory brand, string memory oilType)"
-];
-const oilValidatorContract = new ethers.Contract(process.env.CONTRACT_ADDRESS, contractABI, provider);
-
-// ─── GET /variants/:variantId (REAL BLOCKCHAIN READ) ─────────────────────────
-router.get('/:variantId', async (req, res) => {
+// GET /variants/:id
+router.get('/:id', async (req, res) => {
     try {
-        const { variantId } = req.params;
+        const variantId = req.params.id;
         
-        if (!variantId || isNaN(variantId) || Number(variantId) <= 0) {
-            return res.status(400).json({
-                success: false,
-                error: { code: "VALIDATION_ERROR", message: "Variant ID harus berupa angka positif." }
-            });
+        const totalVariants = await publicClient.readContract({ address: CONTRACT_ADDRESS, abi: contractABI, functionName: 'totalVariants' });
+        if (Number(variantId) <= 0 || Number(variantId) > Number(totalVariants)) {
+            return res.status(404).json({ success: false, error: { code: "VARIANT_NOT_FOUND", message: "Variant ID does not exist on-chain." } });
         }
 
-        console.log(`[Blockchain RPC] Mengambil data master Variant ID: ${variantId}`);
-        
-        // Memanggil mapping public variants(uint32) langsung dari contract temanmu
-        const variantData = await oilValidatorContract.variants(Number(variantId));
-
-        // Jika brand kosong, berarti variantId tersebut belum terdaftar on-chain
-        if (!variantData.brand || variantData.brand.trim() === "") {
-            return res.status(404).json({
-                success: false,
-                error: { code: "VARIANT_NOT_FOUND", message: `Master Variant dengan ID ${variantId} tidak ditemukan.` }
-            });
-        }
+        const variantData = await publicClient.readContract({
+            address: CONTRACT_ADDRESS, abi: contractABI, functionName: 'variants', args: [BigInt(variantId)]
+        });
 
         return res.status(200).json({
             success: true,
-            data: {
-                variantId: Number(variantId),
-                brand: variantData.brand,
-                oilType: variantData.oilType
-            }
+            data: { variantId: Number(variantId), brand: variantData[0], oilType: variantData[1] }
         });
-
     } catch (error) {
-        console.error("❌ Fetch Variant Blockchain Error:", error);
-        return res.status(500).json({
-            success: false,
-            error: { code: "RPC_FETCH_FAILED", message: error.message }
-        });
+        return res.status(500).json({ success: false, error: { code: "RPC_ERROR", message: error.message } });
     }
 });
 
