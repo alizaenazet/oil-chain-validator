@@ -138,8 +138,10 @@ function Verify() {
 
       if (cancelled) return;
 
+      const scanLocation = await resolveLocation();
       // 1. Inspect current on-chain status first.
       let current;
+      setLocation(scanLocation)
       try {
         const res = await getProduct(serialNumber);
         current = res?.data;
@@ -177,7 +179,6 @@ function Verify() {
       }
 
 
-      const scanLocation = await resolveLocation();
       // status === "NEW" -> perform the first validation (gas relayer).
       try {
         const res = await validateProduct(serialNumber, scanLocation);
