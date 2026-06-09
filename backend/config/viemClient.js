@@ -56,6 +56,14 @@ const contractABI = [
   {
     inputs: [{ name: "productHash", type: "bytes32" }, { name: "scanLocation", type: "string" }],
     name: "validateProduct", outputs: [], stateMutability: "external", type: "function"
+  },
+  {
+    inputs: [{ name: "newAdmin", type: "address" }],
+    name: "transferOwnership", outputs: [], stateMutability: "external", type: "function"
+  },
+  {
+    inputs: [],
+    name: "admin", outputs: [{ type: "address" }], stateMutability: "view", type: "function"
   }
 ];
 

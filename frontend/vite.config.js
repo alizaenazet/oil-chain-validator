@@ -10,13 +10,10 @@ export default defineConfig({
     // Proxy backend routes to the Express server on port 3000 so the browser
     // makes same-origin requests (avoids CORS without touching the backend).
     proxy: {
-      "/auth": "http://localhost:3000",
-      "/admin": "http://localhost:3000",
-      "/variants": "http://localhost:3000",
-      "/products": "http://localhost:3000",
-      "/validate": "http://localhost:3000",
-      "/stats": "http://localhost:3000",
-      "/ping": "http://localhost:3000",
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
+      }
     },
   },
 })

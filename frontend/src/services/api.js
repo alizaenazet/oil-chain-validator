@@ -7,7 +7,7 @@ import axios from "axios";
 // forward these paths to http://localhost:3000, keeping requests same-origin
 // (no CORS needed).
 const API = axios.create({
-  baseURL: "",
+  baseURL: "/api",
 });
 
 API.interceptors.request.use((config) => {

@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const authenticateAdminJWT = require('../middlewares/auth');
 const { Variant } = require('../models'); 
-const { keccak256, toHex } = require('viem');
+const { keccak256, toHex, isAddress } = require('viem');
 const { publicClient, walletClient, CONTRACT_ADDRESS, contractABI } = require('../config/viemClient');
 
 // 1. POST /admin/variants
@@ -96,6 +96,40 @@ router.post('/emergency-revoke', authenticateAdminJWT, async (req, res) => {
         await publicClient.waitForTransactionReceipt({ hash });
 
         return res.status(200).json({ success: true, data: { revoked: hashedCompromisedIds.length, txHash: hash, revokedIds: hashedCompromisedIds } });
+    } catch (error) {
+        return res.status(500).json({ success: false, error: { code: "BLOCKCHAIN_TX_FAILED", message: error.message } });
+    }
+});
+
+// 4. POST /admin/transfer-ownership
+router.post('/transfer-ownership', authenticateAdminJWT, async (req, res) => {
+    try {
+        const { newAdminAddress } = req.body;
+
+        if (!newAdminAddress || !isAddress(newAdminAddress)) {
+            return res.status(400).json({ success: false, error: { code: "VALIDATION_ERROR", message: "A valid newAdminAddress is required." } });
+        }
+
+        // Baca admin saat ini on-chain agar tidak transfer ke address yang sama
+        const currentAdmin = await publicClient.readContract({ address: CONTRACT_ADDRESS, abi: contractABI, functionName: 'admin' });
+        if (String(currentAdmin).toLowerCase() === String(newAdminAddress).toLowerCase()) {
+            return res.status(409).json({ success: false, error: { code: "ALREADY_ADMIN", message: "The provided address is already the admin." } });
+        }
+
+        const hash = await walletClient.writeContract({
+            address: CONTRACT_ADDRESS, abi: contractABI, functionName: 'transferOwnership', args: [newAdminAddress],
+        });
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                previousAdmin: currentAdmin,
+                newAdmin: newAdminAddress,
+                txHash: hash,
+                blockNumber: Number(receipt.blockNumber)
+            }
+        });
     } catch (error) {
         return res.status(500).json({ success: false, error: { code: "BLOCKCHAIN_TX_FAILED", message: error.message } });
     }

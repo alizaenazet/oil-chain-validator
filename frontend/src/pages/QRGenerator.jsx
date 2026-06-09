@@ -38,10 +38,10 @@ function QRGenerator() {
           style={{
             color: "#64748b",
             marginBottom: "25px",
+            marginTop: "25px"
           }}
         >
-          Generate QR Code for
-          lubricant products.
+          Generate QR Code for lubricant products.
         </p>
 
         <div
