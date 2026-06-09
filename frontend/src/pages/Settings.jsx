@@ -1,345 +1,188 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import AdminLayout from "../components/AdminLayout";
+import { emergencyRevoke } from "../services/adminService";
+import { getApiError } from "../services/errorUtils";
 
 function Settings() {
-  const [walletAddress, setWalletAddress] =
-    useState("");
+  const [serialNumbers, setSerialNumbers] = useState("");
+  const [reason, setReason] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [result, setResult] = useState(null);
 
-  const [serialNumber, setSerialNumber] =
-    useState("");
-
-  const [revokedSerials,
-    setRevokedSerials] =
-    useState(() => {
-      const saved =
-        localStorage.getItem(
-          "revokedSerials"
-        );
-
-      return saved
-        ? JSON.parse(saved)
-        : [];
-    });
-
-  useEffect(() => {
-    localStorage.setItem(
-      "revokedSerials",
-      JSON.stringify(
-        revokedSerials
-      )
-    );
-  }, [revokedSerials]);
-
-  const handleTransferOwnership = () => {
-    if (!walletAddress) return;
-
-    alert(
-      `Ownership transferred to ${walletAddress}`
-    );
-
-    setWalletAddress("");
+  const showToast = (message, type) => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
   };
 
-  const handleRevoke = () => {
-    if (!serialNumber) return;
+  const handleRevoke = async () => {
+    const list = serialNumbers
+      .split("\n")
+      .map((s) => s.trim())
+      .filter((s) => s !== "");
 
-    setRevokedSerials([
-      ...revokedSerials,
-      serialNumber,
-    ]);
+    if (list.length === 0) {
+      showToast("Masukkan minimal satu serial number.", "error");
+      return;
+    }
 
-    setSerialNumber("");
-  };
-
-  const handleDelete = (index) => {
-    setRevokedSerials(
-      revokedSerials.filter(
-        (_, i) => i !== index
-      )
-    );
+    setLoading(true);
+    setResult(null);
+    try {
+      const res = await emergencyRevoke(list, reason.trim() || undefined);
+      setResult(res?.data ?? null);
+      showToast(
+        `${res?.data?.revoked ?? list.length} product(s) revoked on-chain.`,
+        "success"
+      );
+      setSerialNumbers("");
+      setReason("");
+    } catch (err) {
+      showToast(getApiError(err).message, "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <AdminLayout>
-      <h1
-        style={{
-          marginBottom: "25px",
-          color: "#1e293b",
-        }}
-      >
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            top: "20px",
+            right: "20px",
+            padding: "14px 20px",
+            borderRadius: "10px",
+            color: "white",
+            fontWeight: "bold",
+            zIndex: 999,
+            background: toast.type === "success" ? "#22c55e" : "#ef4444",
+            boxShadow: "0 5px 15px rgba(0,0,0,0.2)",
+            maxWidth: "360px",
+          }}
+        >
+          {toast.message}
+        </div>
+      )}
+
+      <h1 style={{ marginBottom: "25px", color: "#1e293b" }}>
         System Settings
       </h1>
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(400px, 1fr))",
-          gap: "25px",
-        }}
-      >
-        {/* Transfer Ownership */}
-
-        <div
-          style={{
-            background: "#fff",
-            padding: "25px",
-            borderRadius: "15px",
-            boxShadow:
-              "0 4px 12px rgba(0,0,0,0.08)",
-          }}
-        >
-          <h2
-            style={{
-              color: "#2563eb",
-              marginBottom: "20px",
-            }}
-          >
-            Transfer Ownership
-          </h2>
-
-          <p
-            style={{
-              color: "#64748b",
-              marginBottom: "15px",
-            }}
-          >
-            Transfer administrator
-            rights to another wallet.
-          </p>
-
-          <input
-            type="text"
-            placeholder="Wallet Address"
-            value={walletAddress}
-            onChange={(e) =>
-              setWalletAddress(
-                e.target.value
-              )
-            }
-            style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: "10px",
-              border:
-                "1px solid #d1d5db",
-              marginBottom: "15px",
-            }}
-          />
-
-          <button
-            onClick={
-              handleTransferOwnership
-            }
-            style={{
-              width: "100%",
-              background:
-                "#2563eb",
-              color: "white",
-              border: "none",
-              padding: "12px",
-              borderRadius: "10px",
-              cursor: "pointer",
-              fontWeight: "bold",
-            }}
-          >
-            Transfer Ownership
-          </button>
-        </div>
-
-        {/* Emergency Revoke */}
-
-        <div
-          style={{
-            background: "#fff",
-            padding: "25px",
-            borderRadius: "15px",
-            boxShadow:
-              "0 4px 12px rgba(0,0,0,0.08)",
-          }}
-        >
-          <h2
-            style={{
-              color: "#dc2626",
-              marginBottom: "20px",
-            }}
-          >
-            Emergency Revoke
-          </h2>
-
-          <p
-            style={{
-              color: "#64748b",
-              marginBottom: "15px",
-            }}
-          >
-            Revoke compromised
-            product serial numbers.
-          </p>
-
-          <input
-            type="text"
-            placeholder="Serial Number"
-            value={serialNumber}
-            onChange={(e) =>
-              setSerialNumber(
-                e.target.value
-              )
-            }
-            style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: "10px",
-              border:
-                "1px solid #d1d5db",
-              marginBottom: "15px",
-            }}
-          />
-
-          <button
-            onClick={handleRevoke}
-            style={{
-              width: "100%",
-              background:
-                "#dc2626",
-              color: "white",
-              border: "none",
-              padding: "12px",
-              borderRadius: "10px",
-              cursor: "pointer",
-              fontWeight: "bold",
-            }}
-          >
-            Revoke Product
-          </button>
-        </div>
-      </div>
-
-      {/* Revoked Products */}
-
-      <div
-        style={{
           background: "#fff",
-          marginTop: "30px",
           padding: "25px",
           borderRadius: "15px",
-          boxShadow:
-            "0 4px 12px rgba(0,0,0,0.08)",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+          maxWidth: "640px",
         }}
       >
-        <h2
-          style={{
-            color: "#1e293b",
-            marginBottom: "20px",
-          }}
-        >
-          Revoked Products
+        <h2 style={{ color: "#dc2626", marginBottom: "10px" }}>
+          Emergency Revoke
         </h2>
 
-        {revokedSerials.length === 0 ? (
-          <p
-            style={{
-              color: "#64748b",
-            }}
-          >
-            No revoked products yet.
-          </p>
-        ) : (
-          <table
-            style={{
-              width: "100%",
-              borderCollapse:
-                "collapse",
-            }}
-          >
-            <thead>
-              <tr
-                style={{
-                  background:
-                    "#f8fafc",
-                }}
-              >
-                <th
-                  style={{
-                    padding:
-                      "12px",
-                    textAlign:
-                      "left",
-                  }}
-                >
-                  Serial Number
-                </th>
+        <p style={{ color: "#64748b", marginBottom: "20px" }}>
+          Permanently mark compromised product serial numbers as{" "}
+          <strong>REVOKED</strong> on-chain. Revoked products display a
+          counterfeit warning when scanned. Enter one serial number per line.
+        </p>
 
-                <th
-                  style={{
-                    padding:
-                      "12px",
-                  }}
-                >
-                  Action
-                </th>
-              </tr>
-            </thead>
+        <label>Serial Numbers (one per line)</label>
+        <textarea
+          rows="6"
+          value={serialNumbers}
+          disabled={loading}
+          placeholder={`OIL-PERT-2024-000001\nOIL-PERT-2024-000002`}
+          onChange={(e) => setSerialNumbers(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "12px",
+            marginTop: "5px",
+            marginBottom: "15px",
+            borderRadius: "10px",
+            border: "1px solid #d1d5db",
+          }}
+        />
 
-            <tbody>
-              {revokedSerials.map(
-                (
-                  serial,
-                  index
-                ) => (
-                  <tr
-                    key={index}
-                    style={{
-                      borderTop:
-                        "1px solid #e5e7eb",
-                    }}
-                  >
-                    <td
-                      style={{
-                        padding:
-                          "12px",
-                      }}
-                    >
-                      {serial}
-                    </td>
+        <label>Reason (optional, audit log)</label>
+        <input
+          type="text"
+          value={reason}
+          disabled={loading}
+          placeholder="QR stickers stolen before distribution — Batch #B-2024-08"
+          onChange={(e) => setReason(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "12px",
+            marginTop: "5px",
+            marginBottom: "20px",
+            borderRadius: "10px",
+            border: "1px solid #d1d5db",
+          }}
+        />
 
-                    <td
-                      style={{
-                        padding:
-                          "12px",
-                      }}
-                    >
-                      <button
-                        onClick={() =>
-                          handleDelete(
-                            index
-                          )
-                        }
-                        style={{
-                          background:
-                            "#ef4444",
-                          color:
-                            "white",
-                          border:
-                            "none",
-                          padding:
-                            "8px 14px",
-                          borderRadius:
-                            "8px",
-                          cursor:
-                            "pointer",
-                        }}
-                      >
-                        Remove
-                      </button>
-                    </td>
-                  </tr>
-                )
-              )}
-            </tbody>
-          </table>
-        )}
+        <button
+          onClick={handleRevoke}
+          disabled={loading}
+          style={{
+            width: "100%",
+            background: loading ? "#94a3b8" : "#dc2626",
+            color: "white",
+            border: "none",
+            padding: "12px",
+            borderRadius: "10px",
+            cursor: loading ? "not-allowed" : "pointer",
+            fontWeight: "bold",
+          }}
+        >
+          {loading ? "Revoking on-chain…" : "Revoke Products"}
+        </button>
       </div>
+
+      {result && (
+        <div
+          style={{
+            background: "#fff",
+            marginTop: "30px",
+            padding: "25px",
+            borderRadius: "15px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+            maxWidth: "640px",
+          }}
+        >
+          <h2 style={{ color: "#1e293b", marginBottom: "20px" }}>
+            Last Revoke Result
+          </h2>
+
+          <p>
+            <strong>Total Revoked:</strong> {result.revoked}
+          </p>
+          <p style={{ wordBreak: "break-all" }}>
+            <strong>Transaction Hash:</strong> {result.txHash}
+          </p>
+
+          <details>
+            <summary
+              style={{
+                cursor: "pointer",
+                color: "#2563eb",
+                fontWeight: "bold",
+              }}
+            >
+              View Revoked Product IDs
+            </summary>
+            <ul>
+              {(result.revokedIds || []).map((id) => (
+                <li key={id} style={{ wordBreak: "break-all" }}>
+                  {id}
+                </li>
+              ))}
+            </ul>
+          </details>
+        </div>
+      )}
     </AdminLayout>
   );
 }

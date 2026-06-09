@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { login } from "../services/authService";
+import { getApiError } from "../services/errorUtils";
 
 function Login() {
   const [username, setUsername] =
@@ -43,23 +45,26 @@ function Login() {
 
     setLoading(true);
 
-    setTimeout(() => {
-      localStorage.setItem(
-        "token",
-        "mock-jwt-token"
-      );
+    try {
+      const result = await login(username, password);
 
-      showToast(
-        "Login berhasil",
-        "success"
-      );
+      if (!result?.token) {
+        throw new Error("Token tidak diterima dari server.");
+      }
 
-      setLoading(false);
+      localStorage.setItem("token", result.token);
+
+      showToast("Login berhasil", "success");
 
       setTimeout(() => {
         navigate("/dashboard");
-      }, 1000);
-    }, 2000);
+      }, 800);
+    } catch (error) {
+      const { message } = getApiError(error);
+      showToast(message || "Login gagal", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
