@@ -1,24 +1,26 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "../components/AdminLayout";
-import { getStats } from "../services/statService";
+import { listVariants } from "../services/variantService"; // 🔥 Diubah ke variantService untuk membaca SQLite
 import { getApiError } from "../services/errorUtils";
 
 function Dashboard() {
-  const [totalVariants, setTotalVariants] = useState(null);
+  const [totalVariants, setTotalVariants] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isApiConnected, setIsApiConnected] = useState(true); // State tambahan untuk deteksi API status
 
   const loadStats = async (showSpinner = true) => {
     if (showSpinner) setLoading(true);
     setError(null);
 
     try {
-      const res = await getStats();
-      setTotalVariants(
-        Number(res?.data?.totalMasterVariantsOnChain ?? 0)
-      );
+      // Ambil data array utuh langsung dari database SQLite
+      const list = await listVariants();
+      setTotalVariants(list.length); // Menghitung total data (10)
+      setIsApiConnected(true);
     } catch (err) {
       setError(getApiError(err).message);
+      setIsApiConnected(false);
     } finally {
       setLoading(false);
     }
@@ -28,13 +30,15 @@ function Dashboard() {
     let active = true;
     (async () => {
       try {
-        const res = await getStats();
+        const list = await listVariants();
         if (!active) return;
-        setTotalVariants(
-          Number(res?.data?.totalMasterVariantsOnChain ?? 0)
-        );
+        setTotalVariants(list.length);
+        setIsApiConnected(true);
       } catch (err) {
-        if (active) setError(getApiError(err).message);
+        if (active) {
+          setError(getApiError(err).message);
+          setIsApiConnected(false);
+        }
       } finally {
         if (active) setLoading(false);
       }
@@ -51,7 +55,7 @@ function Dashboard() {
           Dashboard Overview
         </h1>
 
-        <p style={{ color: "#64748b", marginBottom: "30px", marginTop: "15px" }}>
+        <p style={{ color: "#64748b", marginBottom: "30px" }}>
           Monitor your anti-counterfeit oil verification system.
         </p>
 
@@ -92,6 +96,7 @@ function Dashboard() {
             gap: "20px",
           }}
         >
+          {/* Card Total Master Variants */}
           <div
             style={{
               background: "#2563eb",
@@ -101,7 +106,7 @@ function Dashboard() {
               boxShadow: "0 5px 15px rgba(37,99,235,0.3)",
             }}
           >
-            <h3>Total Master Variants (On-Chain)</h3>
+            <h3>Total Master Variants (Database)</h3>
 
             <h1 style={{ marginTop: "15px", fontSize: "40px" }}>
               {loading ? "…" : totalVariants}
@@ -130,11 +135,13 @@ function Dashboard() {
 
             <p>
               Backend API:{" "}
-              <strong>{error ? "Unreachable" : "Connected"}</strong>
+              <strong style={{ color: isApiConnected ? "#22c55e" : "#ef4444" }}>
+                {isApiConnected ? "Connected" : "Unreachable"}
+              </strong>
             </p>
 
             <p>
-              Stats Endpoint:{" "}
+              Stats Endpoint:{" "}              
               <strong>{loading ? "Loading…" : "/stats"}</strong>
             </p>
           </div>

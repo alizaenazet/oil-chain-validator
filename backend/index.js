@@ -4,7 +4,7 @@ require('dotenv').config();
 
 // Inisialisasi Database SQLite & Redis Cache secara otomatis saat server start
 require('./config/database');
-require('./config/redis');
+// require('./config/redis');
 
 // Jalur Import Router Baru (Semua berbasis Viem)
 const authRoutes = require('./routes/authRoutes');

@@ -1,21 +1,28 @@
 // routes/statRoutes.js
 const express = require('express');
 const router = express.Router();
-const { publicClient, CONTRACT_ADDRESS, contractABI } = require('../config/viemClient');
+// 🔥 1. Import models Sequelize kamu untuk mengakses SQLite
+const db = require('../models'); 
 
 // GET /stats
 router.get('/', async (req, res) => {
     try {
-        const totalVariants = await publicClient.readContract({
-            address: CONTRACT_ADDRESS, abi: contractABI, functionName: 'totalVariants'
-        });
+        // 🔥 2. Hitung jumlah baris data yang ada di tabel Variant database SQLite lokal
+        const sqliteCount = await db.Variant.count();
+
+        console.log(`[SQLite Stats] Dashboard requesting stats. Found: ${sqliteCount} variants.`);
 
         return res.status(200).json({
             success: true,
-            data: { totalMasterVariantsOnChain: Number(totalVariants) }
+            // Properti ini tetap dijaga namanya agar frontend React kamu tidak pecah/crash
+            data: { totalMasterVariantsOnChain: Number(sqliteCount) }
         });
     } catch (error) {
-        return res.status(500).json({ success: false, error: { code: "RPC_ERROR", message: error.message } });
+        console.error("❌ Gagal mengambil statistik dari SQLite:", error);
+        return res.status(500).json({ 
+            success: false, 
+            error: { code: "DB_ERROR", message: error.message } 
+        });
     }
 });
 
