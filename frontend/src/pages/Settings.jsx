@@ -113,6 +113,7 @@ function Settings() {
             padding: "25px",
             borderRadius: "15px",
             boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+            alignItems: "center"
           }}
         >
           <h2 style={{ color: "#2563eb", marginBottom: "10px" }}>

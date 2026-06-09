@@ -80,7 +80,7 @@ function BatchRegistration() {
           Batch Registration
         </h1>
 
-        <p style={{ color: "#64748b", marginBottom: "25px" }}>
+        <p style={{ color: "#64748b", marginBottom: "25px", marginTop: "25px" }}>
           Register product batches on-chain before distributing lubricant
           products. Enter one raw serial number per line.
         </p>

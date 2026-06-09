@@ -121,7 +121,7 @@ function Variants() {
           Variant Management
         </h1>
 
-        <p style={{ color: "#64748b", marginBottom: "25px" }}>
+        <p style={{ color: "#64748b", marginBottom: "25px", marginTop: "15px" }}>
           Manage lubricant product variants registered on-chain.
         </p>
 
@@ -214,7 +214,7 @@ function Variants() {
               onClick={loadVariants}
               disabled={loadingList}
               style={{
-                background: "#f1f5f9",
+                background: loadingList ? "#94a3b8" : "#2563eb",
                 border: "1px solid #cbd5e1",
                 padding: "8px 14px",
                 borderRadius: "8px",
