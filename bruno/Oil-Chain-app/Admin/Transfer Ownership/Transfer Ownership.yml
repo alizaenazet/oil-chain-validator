@@ -1,0 +1,82 @@
+info:
+  name: Transfer Ownership
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/transfer-ownership"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Authorization
+      value: Bearer {{token}}
+  body:
+    type: json
+    data: |-
+      {
+        "newAdminAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+      }
+
+runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:3000
+    - name: token
+      value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODA5OTc3MzAsImV4cCI6MTc4MTA4NDEzMH0.RwyBtmQaPKjIIjU7hEd_XUsMmdy7T7UTiL-ZX0laNWc
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.success
+      operator: eq
+      value: "true"
+    - expression: res.body.data.txHash
+      operator: isString
+
+settings:
+  encodeUrl: true
+  timeout: 120000
+  followRedirects: false
+  maxRedirects: 5
+
+docs: |-
+  # POST /admin/transfer-ownership
+
+  Transfers contract administrative ownership to a new address.
+  Maps to smart contract: `transferOwnership(address newAdmin)`
+
+  **Protected:** Requires Admin JWT Bearer token.
+
+  ## Backend Logic
+  1. Validates JWT token (middleware).
+  2. Validates that `newAdminAddress` is a valid Ethereum address (`viem.isAddress`).
+  3. Reads current admin on-chain to prevent transferring to the same address.
+  4. Calls `transferOwnership(newAdminAddress)` on the OilValidator contract.
+  5. Waits for transaction receipt and returns the new admin address.
+
+  ## Request Body
+  | Field             | Type    | Required | Description                    |
+  |-------------------|---------|----------|--------------------------------|
+  | `newAdminAddress` | address | yes      | Ethereum address of new admin  |
+
+  ## Success Response `200 OK`
+  ```json
+  {
+    "success": true,
+    "data": {
+      "previousAdmin": "0x...",
+      "newAdmin": "0x...",
+      "txHash": "0xabc123...",
+      "blockNumber": 12345
+    }
+  }
+  ```
+
+  ## Error Responses
+  | Status | Code                   | Scenario                                          |
+  |--------|------------------------|---------------------------------------------------|
+  | `401`  | `UNAUTHORIZED`         | Missing or invalid JWT token                      |
+  | `400`  | `VALIDATION_ERROR`     | Invalid or missing `newAdminAddress`              |
+  | `409`  | `ALREADY_ADMIN`        | Provided address is already the current admin     |
+  | `500`  | `BLOCKCHAIN_TX_FAILED` | Contract reverted or RPC unreachable              |

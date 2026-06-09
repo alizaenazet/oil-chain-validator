@@ -29,6 +29,19 @@ export const registerBatch = async (variantId, serialNumbers) => {
 };
 
 /**
+ * POST /admin/transfer-ownership  (protected)
+ * Body: { newAdminAddress: string }
+ * Response: { success, data: { previousAdmin, newAdmin, txHash, blockNumber } }
+ */
+export const transferOwnership = async (newAdminAddress) => {
+  const response = await API.post("/admin/transfer-ownership", {
+    newAdminAddress,
+  });
+
+  return response.data;
+};
+
+/**
  * POST /admin/emergency-revoke  (protected)
  * Body: { serialNumbers: string[], reason?: string }
  * Response: { success, data: { revoked, txHash, revokedIds } }
