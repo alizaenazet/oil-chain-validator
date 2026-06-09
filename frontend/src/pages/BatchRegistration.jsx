@@ -1,103 +1,88 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import AdminLayout from "../components/AdminLayout";
+import { registerBatch } from "../services/adminService";
+import { getApiError } from "../services/errorUtils";
 
 function BatchRegistration() {
-  const [variantId, setVariantId] =
-    useState("");
+  const [variantId, setVariantId] = useState("");
+  const [serials, setSerials] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [result, setResult] = useState(null);
+  const [conflicts, setConflicts] = useState([]);
 
-  const [serials, setSerials] =
-    useState("");
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [
-    registeredBatches,
-    setRegisteredBatches,
-  ] = useState(() => {
-    const savedBatches =
-      localStorage.getItem(
-        "registeredBatches"
-      );
-
-    return savedBatches
-      ? JSON.parse(savedBatches)
-      : [];
-  });
-
-  useEffect(() => {
-    localStorage.setItem(
-      "registeredBatches",
-      JSON.stringify(
-        registeredBatches
-      )
-    );
-  }, [registeredBatches]);
+  const showToast = (message, type) => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setConflicts([]);
 
-    if (!variantId || !serials)
+    const serialList = serials
+      .split("\n")
+      .map((s) => s.trim())
+      .filter((s) => s !== "");
+
+    if (!variantId || serialList.length === 0) {
+      showToast("Variant ID dan minimal satu Serial Number wajib diisi.", "error");
       return;
+    }
 
     setLoading(true);
-
-    setTimeout(() => {
-      const serialList =
-        serials
-          .split("\n")
-          .filter(
-            (item) =>
-              item.trim() !== ""
-          );
-
-      const newBatch = {
-        id: Date.now(),
-        variantId,
-        totalProducts:
-          serialList.length,
-        serials: serialList,
-      };
-
-      setRegisteredBatches(
-        (prev) => [
-          ...prev,
-          newBatch,
-        ]
+    try {
+      const res = await registerBatch(variantId, serialList);
+      setResult(res?.data ?? null);
+      showToast(
+        `${res?.data?.registered ?? serialList.length} product(s) registered on-chain.`,
+        "success"
       );
-
       setVariantId("");
       setSerials("");
-
+    } catch (err) {
+      const apiErr = getApiError(err);
+      if (apiErr.code === "PRODUCT_ALREADY_EXISTS") {
+        setConflicts(apiErr.details?.conflictingIds || []);
+        showToast("Some serial numbers are already registered.", "error");
+      } else {
+        showToast(apiErr.message, "error");
+      }
+    } finally {
       setLoading(false);
-    }, 2000);
+    }
   };
 
   return (
     <AdminLayout>
-      <div
-        style={{
-          padding: "20px",
-        }}
-      >
-        <h1
+      {toast && (
+        <div
           style={{
-            color: "#1e293b",
-            marginBottom: "5px",
+            position: "fixed",
+            top: "20px",
+            right: "20px",
+            padding: "14px 20px",
+            borderRadius: "10px",
+            color: "white",
+            fontWeight: "bold",
+            zIndex: 999,
+            background: toast.type === "success" ? "#22c55e" : "#ef4444",
+            boxShadow: "0 5px 15px rgba(0,0,0,0.2)",
+            maxWidth: "360px",
           }}
         >
+          {toast.message}
+        </div>
+      )}
+
+      <div style={{ padding: "20px" }}>
+        <h1 style={{ color: "#1e293b", marginBottom: "5px" }}>
           Batch Registration
         </h1>
 
-        <p
-          style={{
-            color: "#64748b",
-            marginBottom: "25px",
-          }}
-        >
-          Register product batches
-          before distributing
-          lubricant products.
+        <p style={{ color: "#64748b", marginBottom: "25px" }}>
+          Register product batches on-chain before distributing lubricant
+          products. Enter one raw serial number per line.
         </p>
 
         <div
@@ -105,81 +90,47 @@ function BatchRegistration() {
             background: "white",
             padding: "25px",
             borderRadius: "15px",
-            boxShadow:
-              "0 3px 12px rgba(0,0,0,0.08)",
+            boxShadow: "0 3px 12px rgba(0,0,0,0.08)",
             marginBottom: "30px",
           }}
         >
-          <h2>
-            Create New Batch
-          </h2>
+          <h2>Create New Batch</h2>
 
-          <form
-            onSubmit={
-              handleSubmit
-            }
-          >
-            <div
-              style={{
-                marginBottom: "15px",
-              }}
-            >
-              <label>
-                Variant ID
-              </label>
-
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: "15px" }}>
+              <label>Variant ID</label>
               <br />
-
               <input
                 type="number"
+                min="1"
                 value={variantId}
                 disabled={loading}
-                onChange={(e) =>
-                  setVariantId(
-                    e.target.value
-                  )
-                }
+                onChange={(e) => setVariantId(e.target.value)}
                 style={{
                   width: "100%",
                   padding: "10px",
                   marginTop: "5px",
                   borderRadius: "8px",
-                  border:
-                    "1px solid #cbd5e1",
+                  border: "1px solid #cbd5e1",
                 }}
               />
             </div>
 
-            <div
-              style={{
-                marginBottom: "20px",
-              }}
-            >
-              <label>
-                Serial Numbers
-              </label>
-
+            <div style={{ marginBottom: "20px" }}>
+              <label>Serial Numbers (one per line)</label>
               <br />
-
               <textarea
                 rows="10"
                 value={serials}
                 disabled={loading}
-                placeholder={`SN001
-SN002
-SN003`}
-                onChange={(e) =>
-                  setSerials(
-                    e.target.value
-                  )
-                }
+                placeholder={`OIL-PERT-2024-000001\nOIL-PERT-2024-000002\nOIL-PERT-2024-000003`}
+                onChange={(e) => setSerials(e.target.value)}
                 style={{
                   width: "100%",
                   padding: "10px",
                   marginTop: "5px",
                   borderRadius: "8px",
-                  border:
-                    "1px solid #cbd5e1",
+                  border: "1px solid #cbd5e1",
                 }}
               />
             </div>
@@ -188,136 +139,88 @@ SN003`}
               type="submit"
               disabled={loading}
               style={{
-                background:
-                  loading
-                    ? "#94a3b8"
-                    : "#2563eb",
+                background: loading ? "#94a3b8" : "#2563eb",
                 color: "white",
                 border: "none",
-                padding:
-                  "12px 20px",
-                borderRadius:
-                  "8px",
-                cursor:
-                  loading
-                    ? "not-allowed"
-                    : "pointer",
-                fontWeight:
-                  "bold",
+                padding: "12px 20px",
+                borderRadius: "8px",
+                cursor: loading ? "not-allowed" : "pointer",
+                fontWeight: "bold",
               }}
             >
-              {loading
-                ? "Registering Batch..."
-                : "Register Batch"}
+              {loading ? "Registering Batch on-chain…" : "Register Batch"}
             </button>
           </form>
         </div>
 
-        <div
-          style={{
-            background: "white",
-            padding: "25px",
-            borderRadius: "15px",
-            boxShadow:
-              "0 3px 12px rgba(0,0,0,0.08)",
-          }}
-        >
-          <h2
+        {conflicts.length > 0 && (
+          <div
             style={{
-              marginBottom: "20px",
+              background: "#fff7ed",
+              border: "1px solid #fdba74",
+              padding: "20px",
+              borderRadius: "15px",
+              marginBottom: "30px",
             }}
           >
-            Registered Batches
-          </h2>
-
-          {registeredBatches.length ===
-          0 ? (
-            <p>
-              No batches
-              registered yet.
+            <h3 style={{ color: "#c2410c", marginTop: 0 }}>
+              Conflicting Serial Numbers
+            </h3>
+            <p style={{ color: "#7c2d12" }}>
+              The following serial numbers are already registered on-chain and
+              were not added:
             </p>
-          ) : (
-            registeredBatches.map(
-              (batch) => (
-                <div
-                  key={batch.id}
-                  style={{
-                    border:
-                      "1px solid #e2e8f0",
-                    borderRadius:
-                      "12px",
-                    padding:
-                      "15px",
-                    marginBottom:
-                      "15px",
-                    background:
-                      "#f8fafc",
-                  }}
-                >
-                  <p>
-                    <strong>
-                      Batch ID:
-                    </strong>{" "}
-                    {batch.id}
-                  </p>
+            <ul>
+              {conflicts.map((id) => (
+                <li key={id} style={{ color: "#7c2d12" }}>
+                  {id}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-                  <p>
-                    <strong>
-                      Variant ID:
-                    </strong>{" "}
-                    {
-                      batch.variantId
-                    }
-                  </p>
+        {result && (
+          <div
+            style={{
+              background: "white",
+              padding: "25px",
+              borderRadius: "15px",
+              boxShadow: "0 3px 12px rgba(0,0,0,0.08)",
+            }}
+          >
+            <h2 style={{ marginBottom: "20px" }}>Last Registered Batch</h2>
 
-                  <p>
-                    <strong>
-                      Total Products:
-                    </strong>{" "}
-                    {
-                      batch.totalProducts
-                    }
-                  </p>
+            <p>
+              <strong>Variant ID:</strong> {result.variantId}
+            </p>
+            <p>
+              <strong>Total Registered:</strong> {result.registered}
+            </p>
+            <p style={{ wordBreak: "break-all" }}>
+              <strong>Transaction Hash:</strong> {result.txHash}
+            </p>
 
-                  <details>
-                    <summary
-                      style={{
-                        cursor:
-                          "pointer",
-                        color:
-                          "#2563eb",
-                        fontWeight:
-                          "bold",
-                      }}
-                    >
-                      View Serial
-                      Numbers
-                    </summary>
-
-                    <ul>
-                      {batch.serials.map(
-                        (
-                          serial,
-                          index
-                        ) => (
-                          <li
-                            key={
-                              index
-                            }
-                          >
-                            {
-                              serial
-                            }
-                          </li>
-                        )
-                      )}
-                    </ul>
-                  </details>
-                </div>
-              )
-            )
-          )}
-        </div>
+            <details>
+              <summary
+                style={{
+                  cursor: "pointer",
+                  color: "#2563eb",
+                  fontWeight: "bold",
+                }}
+              >
+                View Hashed Product IDs
+              </summary>
+              <ul>
+                {(result.productIds || []).map((id) => (
+                  <li key={id} style={{ wordBreak: "break-all" }}>
+                    {id}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
