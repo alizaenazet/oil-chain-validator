@@ -1,0 +1,93 @@
+info:
+  name: Emergency Revoke
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/emergency-revoke"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Authorization
+      value: Bearer {{token}}
+  body:
+    type: json
+    data: |-
+      {
+        "serialNumbers": [
+          "OIL-PERT-2024-000001"
+        ],
+        "reason": "QR stickers stolen before distribution — Batch #B-2024-08"
+      }
+
+runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:3000
+    - name: token
+      value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODA5OTc3MzAsImV4cCI6MTc4MTA4NDEzMH0.RwyBtmQaPKjIIjU7hEd_XUsMmdy7T7UTiL-ZX0laNWc
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.success
+      operator: eq
+      value: "true"
+    - expression: res.body.data.revoked
+      operator: isNumber
+
+settings:
+  encodeUrl: true
+  timeout: 120000
+  followRedirects: false
+  maxRedirects: 5
+
+docs: |-
+  # POST /admin/emergency-revoke
+
+  Marks a set of product IDs as permanently invalid/compromised on-chain.
+  Maps to smart contract: `emergencyRevoke(bytes32[] compromisedIds)`
+
+  **Protected:** Requires Admin JWT Bearer token.
+
+  **Use Case:** QR stickers stolen before distribution, human error in batch
+  registration, or any security incident requiring immediate invalidation.
+  The on-chain record is NOT deleted — the status is changed to `REVOKED`,
+  which is displayed as a "COUNTERFEIT WARNING" when scanned by consumers.
+
+  ## Backend Logic
+  1. Validates JWT token (middleware).
+  2. Applies `keccak256` to each entry in `serialNumbers`.
+  3. Calls `emergencyRevoke(bytes32[])` on the OilValidator contract.
+  4. Optionally logs `reason` to a PostgreSQL audit table (off-chain).
+
+  ## Request Body
+  | Field           | Type     | Required | Description                                          |
+  |-----------------|----------|----------|------------------------------------------------------|
+  | `serialNumbers` | string[] | yes      | Raw serial number strings to be hashed and revoked   |
+  | `reason`        | string   | no       | Audit reason stored off-chain in PostgreSQL          |
+
+  ## Success Response `200 OK`
+  ```json
+  {
+    "success": true,
+    "data": {
+      "revoked": 2,
+      "txHash": "0xghi789...",
+      "revokedIds": [
+        "0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+        "0x2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3"
+      ]
+    }
+  }
+  ```
+
+  ## Error Responses
+  | Status | Code                     | Scenario                                          |
+  |--------|--------------------------|---------------------------------------------------|
+  | `401`  | `UNAUTHORIZED`           | Missing or invalid JWT token                      |
+  | `400`  | `VALIDATION_ERROR`       | Empty `serialNumbers` array                       |
+  | `404`  | `PRODUCT_NOT_FOUND`      | One or more IDs not found on-chain                |
+  | `409`  | `ALREADY_REVOKED`        | One or more IDs already have `REVOKED` status     |
+  | `500`  | `BLOCKCHAIN_TX_FAILED`   | Contract reverted or RPC unreachable              |

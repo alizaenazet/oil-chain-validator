@@ -1,0 +1,10 @@
+info:
+  name: Products
+  type: folder
+  seq: 4
+
+docs: |-
+  # Products (Public — Read-Only)
+  Retrieves on-chain product state.
+  Results are served directly from the blockchain RPC (view call, no gas).
+  Consider Redis caching for high-traffic deployments.

@@ -1,0 +1,10 @@
+info:
+  name: Admin
+  type: folder
+  seq: 2
+
+docs: |-
+  # Admin
+  All endpoints under this folder require a valid JWT Bearer token
+  obtained from `POST /auth/login`.
+  The backend wallet (loaded via ENV) pays all blockchain gas fees for writes.

@@ -1,0 +1,9 @@
+info:
+  name: Batches (Admin)
+  type: folder
+  seq: 2
+
+docs: |-
+  # Admin — Batches
+  Register product batches on-chain via `registerProductBatch(bytes32[], uint256)`.
+  Off-chain keccak256 hashing is performed by the backend before submission.

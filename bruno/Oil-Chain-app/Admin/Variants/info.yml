@@ -1,0 +1,8 @@
+info:
+  name: Variants (Admin)
+  type: folder
+  seq: 1
+
+docs: |-
+  # Admin — Variants
+  Manage oil variant master data on-chain via `addVariant(string, string)`.

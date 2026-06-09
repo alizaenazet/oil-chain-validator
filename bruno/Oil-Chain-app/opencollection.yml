@@ -1,0 +1,31 @@
+opencollection: 1.0.0
+
+info:
+  name: Oil-Chain-app
+config:
+  proxy:
+    inherit: true
+    config:
+      protocol: http
+      hostname: ""
+      port: ""
+      auth:
+        username: ""
+        password: ""
+      bypassProxy: ""
+
+request:
+  variables:
+    - name: token
+      value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODA5OTgyODIsImV4cCI6MTc4MTA4NDY4Mn0.mHEwracoiw0jf2ryl2u4vsqMJLF5whG2gA7WBWwrZdc
+    - name: baseUrl
+      value: http://localhost:3000
+bundled: false
+extensions:
+  bruno:
+    ignore:
+      - node_modules
+      - .git
+    presets:
+      request:
+        type: http

@@ -1,0 +1,9 @@
+info:
+  name: Variants
+  type: folder
+  seq: 5
+
+docs: |-
+  # Variants (Public — Read-Only)
+  Retrieves on-chain oil variant master data.
+  Results are cached in Redis to avoid repeated RPC calls.
