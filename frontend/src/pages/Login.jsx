@@ -74,8 +74,6 @@ function Login() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background:
-          "linear-gradient(135deg,#1e3a8a,#2563eb)",
       }}
     >
       {toast && (
