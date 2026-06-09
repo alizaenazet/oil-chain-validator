@@ -1,4 +1,6 @@
 import AdminLayout from "../components/AdminLayout";
+import { getStats }
+from "../services/statsService";
 
 function Dashboard() {
 const stats = {
