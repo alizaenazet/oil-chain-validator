@@ -6,25 +6,25 @@ import { getApiError } from "../services/errorUtils";
 
 const STATUS_CONFIG = {
   VALIDATED: {
-    title: "✓ ORIGINAL PRODUCT — VERIFIED",
+    title: "ORIGINAL PRODUCT — VERIFIED",
     bg: "#ecfdf5",
     border: "1px solid #86efac",
     color: "#15803d",
   },
   ALREADY_USED: {
-    title: "⚠ PRODUCT ALREADY SCANNED",
+    title: "PRODUCT ALREADY SCANNED",
     bg: "#fef9c3",
     border: "1px solid #fde047",
     color: "#a16207",
   },
   REVOKED: {
-    title: "✖ COUNTERFEIT WARNING — REVOKED PRODUCT",
+    title: "COUNTERFEIT WARNING — REVOKED PRODUCT",
     bg: "#fee2e2",
     border: "1px solid #fca5a5",
     color: "#b91c1c",
   },
   NOT_FOUND: {
-    title: "✖ PRODUCT NOT FOUND",
+    title: "PRODUCT NOT FOUND",
     bg: "#fee2e2",
     border: "1px solid #fca5a5",
     color: "#b91c1c",
@@ -60,16 +60,65 @@ function Verify() {
 
     const resolveLocation = () =>
       new Promise((resolve) => {
+        // 1. Helper untuk IP Fallback (Sudah langsung mengembalikan format teks)
+        const fallbackToIP = async () => {
+          try {
+            const response = await fetch("https://ipapi.co/json/");
+            const data = await response.json();
+
+            // Pastikan datanya ada, lalu format sesuai permintaanmu
+            if (data.city && data.region && data.country_code) {
+              resolve(`${data.city}, ${data.region}, ${data.country_code.toUpperCase()}`);
+            } else {
+              resolve("Unknown City, Unknown Region, ID");
+            }
+          } catch (error) {
+            resolve("Location unavailable (Network error)");
+          }
+        };
+
+        // 2. Helper BARU: Reverse Geocoding (Ubah Lat/Lon GPS jadi Teks Alamat)
+        const reverseGeocode = async (lat, lon) => {
+          try {
+            // Menggunakan OpenStreetMap Nominatim API (Gratis, tanpa API Key)
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`
+            );
+            const data = await response.json();
+
+            if (data && data.address) {
+              const addr = data.address;
+              // Pemetaan dinamis: Nominatim terkadang memakai 'city', 'town', atau 'city_district'
+              const city = addr.city || addr.town || addr.city_district || addr.county || "Unknown City";
+              const region = addr.state || addr.region || addr.province || "Unknown Region";
+              const countryCode = (addr.country_code || "ID").toUpperCase();
+
+              resolve(`${city}, ${region}, ${countryCode}`);
+            } else {
+              // Jika API gagal membaca alamat, kembalikan koordinat sebagai cadangan
+              resolve(`${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+            }
+          } catch (error) {
+            // Jika jaringan gagal saat reverse geocoding
+            resolve(`${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+          }
+        };
+
+        // 3. Jika browser tidak mendukung GPS, langsung tembak IP
         if (!navigator.geolocation) {
-          resolve("Location unavailable");
-          return;
+          return fallbackToIP();
         }
+
+        // 4. Coba ambil GPS aslinya
         navigator.geolocation.getCurrentPosition(
-          (pos) =>
-            resolve(
-              `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`
-            ),
-          () => resolve("Location permission denied"),
+          (pos) => {
+            // BERHASIL DAPAT GPS -> Jangan langsung resolve, terjemahkan dulu!
+            reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+          },
+          () => {
+            // Jika user menolak (Permission denied) atau Timeout, jalankan fallback IP
+            fallbackToIP();
+          },
           { timeout: 8000 }
         );
       });
@@ -87,9 +136,7 @@ function Verify() {
     const run = async () => {
       setLoading(true);
 
-      const scanLocation = await resolveLocation();
       if (cancelled) return;
-      setLocation(scanLocation);
 
       // 1. Inspect current on-chain status first.
       let current;
@@ -105,11 +152,13 @@ function Verify() {
           setOutcome("ERROR");
           setMessage(getApiError(err).message);
         }
+        setLocation("-")
         setLoading(false);
         return;
       }
 
       if (cancelled) return;
+      setLocation(current.scanLocation)
       setProduct(current);
 
       // 2. Branch on status.
@@ -127,6 +176,8 @@ function Verify() {
         return;
       }
 
+
+      const scanLocation = await resolveLocation();
       // status === "NEW" -> perform the first validation (gas relayer).
       try {
         const res = await validateProduct(serialNumber, scanLocation);
@@ -205,8 +256,11 @@ function Verify() {
           boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
         }}
       >
-        <h1 style={{ color: "#1e293b", marginBottom: "10px" }}>
-          Product Verification
+        <h1 style={{ color: "#1e293b", margin: "10px" }}>
+          Product
+        </h1>
+        <h1 style={{ color: "#1e293b", margin: "20px" }}>
+          Verification
         </h1>
 
         <p style={{ color: "#64748b", marginBottom: "25px" }}>
