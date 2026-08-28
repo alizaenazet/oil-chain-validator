@@ -1,7 +1,14 @@
 {
-  "name": "oil-chain-validator",
+  "name": "blockchain",
   "version": "1.0.0",
   "type": "module",
+  "main": "index.cjs",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "node": "hardhat node",
+    "deploy:contract": "hardhat ignition deploy ignition/modules/OilValidator.ts"
+  },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^3.1.4",
     "@nomicfoundation/hardhat-toolbox-viem": "^5.0.4",

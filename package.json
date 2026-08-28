@@ -2,11 +2,16 @@
   "name": "oil-chain-validator",
   "version": "1.0.0",
   "description": "oil-chain-validator project",
+  "private": true,
   "scripts": {
     "dev:frontend": "pnpm --filter frontend dev",
     "dev:backend": "pnpm --filter backend dev",
-    "node:chain": "pnpm --filter blockchain node",
     "dev:all": "pnpm --parallel --filter frontend --filter backend dev",
+    "node:chain": "pnpm --filter blockchain node",
+    "node:compile": "pnpm --filter blockchain compile",
+    "node:test": "pnpm --filter blockchain test",
+    "node:deploy": "pnpm --filter blockchain deploy:contract",
+    "build": "pnpm -r build",
     "clean": "pnpm -r run clean"
   },
   "keywords": [],
