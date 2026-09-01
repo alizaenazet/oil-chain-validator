@@ -1,5 +1,6 @@
 import hardhatToolboxViemPlugin from "@nomicfoundation/hardhat-toolbox-viem";
 import { configVariable, defineConfig } from "hardhat/config";
+import { anvil } from "viem/chains";
 
 export default defineConfig({
   plugins: [hardhatToolboxViemPlugin],
@@ -34,5 +35,9 @@ export default defineConfig({
       url: configVariable("SEPOLIA_RPC_URL"),
       accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
     },
+    anvil: {
+      type: "http",
+      url: process.env.RPC_URL ?? "http://127.0.0.1:8545",
+    }
   },
 });

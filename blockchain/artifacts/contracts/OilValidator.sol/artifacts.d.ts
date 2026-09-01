@@ -15,7 +15,7 @@ export interface OilValidator$Type {
   readonly deployedLinkReferences: {};
   readonly immutableReferences: {};
   readonly inputSourceName: "project/contracts/OilValidator.sol";
-  readonly buildInfoId: "solc-0_8_28-da95650aa88149096f47c75c6cb4a67633270fc8";
+  readonly buildInfoId: "solc-0_8_28-201f0f59bfb7af5e3e5fe9b4dc8b16b3cfa87c93";
 };
 
 import "hardhat/types/artifacts";
