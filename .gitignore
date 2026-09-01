@@ -55,3 +55,8 @@ pnpm-debug.log*
 # Opencode
 .opencode/*
 .opencode/
+
+# Local dev build
+/blockchain/cache/
+/blockchain/artifacts/
+/blockchain/ignition/deployments/chain-31337/
