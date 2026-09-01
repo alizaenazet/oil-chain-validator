@@ -1,0 +1,71 @@
+name: oil-chain-validator-dev
+
+services:
+  anvil:
+    image: ghcr.io/foundry-rs/foundry:latest
+    entrypoint: ["anvil", "--host", "0.0.0.0", "--chain-id", "31337"]
+    ports: ["8545:8545"]
+    healthcheck:
+      test: ["CMD-SHELL", "cast chain-id --rpc-url http://127.0.0.1:8545"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  otterscan:
+    image: otterscan/otterscan:latest
+    ports: ["5100:80"]
+    environment:
+      ERIGON_URL: "http://anvil:8545"
+    depends_on:
+      anvil: { condition: service_healthy }
+
+  redis:
+    image: redis:7-alpine
+
+  contracts-deploy:
+    build: { context: ., target: dev }
+    command: sh -c "pnpm --filter blockchain compile && pnpm --filter blockchain deploy:anvil"
+    restart: "no"
+    environment:
+      RPC_URL: "http://anvil:8545"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/backend/node_modules
+      - /app/frontend/node_modules
+      - /app/blockchain/node_modules
+    depends_on:
+      anvil: { condition: service_healthy }
+
+  backend:
+    build: { context: ., target: dev }
+    command: pnpm --filter backend dev
+    ports: ["3000:3000"] # confirm against your real backend PORT
+    environment:
+      NODE_ENV: development
+      RPC_URL: "http://anvil:8545"
+      REDIS_URL: "redis://redis:6379" # confirm against backend/config/redis.js
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/backend/node_modules
+      - /app/frontend/node_modules
+      - /app/blockchain/node_modules
+    depends_on:
+      contracts-deploy: { condition: service_completed_successfully }
+      redis: { condition: service_started }
+
+  frontend:
+    build: { context: ., target: dev }
+    command: pnpm --filter frontend dev -- --host 0.0.0.0
+    ports: ["5173:5173"]
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/backend/node_modules
+      - /app/frontend/node_modules
+      - /app/blockchain/node_modules
+    depends_on:
+      - backend
+    environment:
+      BACKEND_URL: "http://backend:3000"

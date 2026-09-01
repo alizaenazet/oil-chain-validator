@@ -5,13 +5,14 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: '0.0.0.0',
     port: 5173,
     strictPort: true,
     // Proxy backend routes to the Express server on port 3000 so the browser
     // makes same-origin requests (avoids CORS without touching the backend).
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: process.env.BACKEND_URL || 'http://localhost:3000',
         changeOrigin: true
       }
     },

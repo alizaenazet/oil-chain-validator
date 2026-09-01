@@ -1,0 +1,60 @@
+name: oil-chain-validator-prod
+
+services:
+  anvil:
+    image: ghcr.io/foundry-rs/foundry:latest
+    entrypoint: ["anvil", "--host", "0.0.0.0", "--chain-id", "31337"]
+    ports: ["8545:8545"]
+    healthcheck:
+      test: ["CMD-SHELL", "cast chain-id --rpc-url http://127.0.0.1:8545"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  otterscan:
+    image: otterscan/otterscan:latest
+    ports: ["5100:80"]
+    environment:
+      ERIGON_URL: "http://anvil:8545"
+    depends_on:
+      anvil: { condition: service_healthy }
+
+  redis:
+    image: redis:7-alpine
+
+  contracts-deploy:
+    build: { context: ., target: dev } # needs the hardhat CLI — see explanation #2
+    command: sh -c "pnpm --filter blockchain compile && pnpm --filter blockchain deploy --network anvil"
+    restart: "no"
+    environment:
+      RPC_URL: "http://anvil:8545"
+    volumes:
+      - blockchain-artifacts:/app/blockchain/artifacts
+      - blockchain-deployments:/app/blockchain/ignition/deployments
+    depends_on:
+      anvil: { condition: service_healthy }
+
+  backend:
+    build: { context: ., target: backend-prod }
+    ports: ["4000:4000"]
+    environment:
+      NODE_ENV: production
+      REDIS_URL: "redis://redis:6379"
+    volumes:
+      - blockchain-artifacts:/app/blockchain/artifacts
+      - blockchain-deployments:/app/blockchain/ignition/deployments
+      - backend-data:/app/backend/data
+    depends_on:
+      contracts-deploy: { condition: service_completed_successfully }
+      redis: { condition: service_started }
+
+  frontend:
+    build: { context: ., target: frontend-prod }
+    ports: ["8080:80"]
+    depends_on:
+      - backend
+
+volumes:
+  blockchain-artifacts:
+  blockchain-deployments:
+  backend-data:
